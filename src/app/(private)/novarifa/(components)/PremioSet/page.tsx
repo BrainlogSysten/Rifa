@@ -26,9 +26,9 @@ import { useState } from "react";
 const AwardSet: React.FC = () => {
   const [create, setCreate] = useState<boolean>(false);
   return (
-    <div className="w-full ">
+    <div className="w-full h-full ">
       {create == false ? (
-        <div className="text-3xl font-semibold flex justify-center items-center flex-col gap-4">
+        <div className="text-3xl font-semibold flex justify-center items-center flex-col gap-4 w-full h-full ">
           <h1>Cadastre um Premio</h1>
           <Button
             type="submit"

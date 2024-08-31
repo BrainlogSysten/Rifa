@@ -1,90 +1,74 @@
 "use client";
-import Image from "next/image";
-import nature from "../../../img/nature.jpg";
-import { PagamentoChart } from "@/components/graficsAnalitics/paymentGraphic";
-import CardCount from "@/components/graficsAnalitics/cardCount";
-import { Search, Plus, Ticket } from "lucide-react";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
-import { Badge } from "@/components/ui/badge";
+import { useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-  SelectLabel,
-  SelectGroup,
 } from "@/components/ui/select";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
+import CreateNewRuffleSchema from "@/app/schema/CreateNewRuffle";
 import { z } from "zod";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 
-const formSchema = z.object({
-  title: z.string().min(2, {
-    message: "O título deve ter pelo menos 2 caracteres.",
-  }),
-  raffleType: z.enum(["tipo1", "tipo2", "tipo3"], {
-    required_error: "Selecione um tipo de rifa.",
-  }),
-  startDate: z.string().nonempty({
-    message: "A data de início é obrigatória.",
-  }),
-  endDate: z.string().nonempty({
-    message: "A data final é obrigatória.",
-  }),
-  description: z.string().optional(),
-});
+type CreateNewRuffle = z.infer<typeof CreateNewRuffleSchema>;
 
-const ConfigSet: React.FC = () => {
-  const form = useForm({
-    resolver: zodResolver(formSchema),
+interface Props {
+  sendData: (data: FormData) => void;
+  receiveData?: (data: FormData) => void;
+}
+
+const ConfigSet: React.FC<Props> = ({ sendData, receiveData }) => {
+  const form = useForm<CreateNewRuffle>({
+    resolver: zodResolver(CreateNewRuffleSchema),
     defaultValues: {
       title: "",
-      raffleType: "",
+      raffleType: "cartela_de_numeros",
       startDate: "",
       endDate: "",
       description: "",
     },
   });
 
-  const onSubmit = (data: any) => {
-    console.log(data);
+  useEffect(() => {
+    // Carregar dados do localStorage se existirem
+    const savedData = localStorage.getItem("formData");
+    if (savedData) {
+      const parsedData = JSON.parse(savedData);
+      form.reset(parsedData);
+    }
+  }, [form]);
+
+  const onSubmit = async (data: CreateNewRuffle) => {
+    try {
+      // Salvar dados no localStorage
+      localStorage.setItem("formData", JSON.stringify(data));
+      let formData = new FormData();
+      formData.append("title", data.title);
+      formData.append("raffleType", data.raffleType);
+      formData.append("startDate", data.startDate);
+      formData.append("endDate", data.endDate);
+      formData.append("description", data.description || "");
+      return sendData(formData);
+    } catch (error) {
+      console.error("Erro durante a submissão:", error);
+    }
   };
 
   return (
     <Form {...form}>
-      <form
-        onSubmit={form.handleSubmit(onSubmit)}
-        className="space-y-8 w-5/12 "
-      >
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 w-5/12">
         <FormField
           control={form.control}
           name="title"
@@ -94,23 +78,19 @@ const ConfigSet: React.FC = () => {
               <FormControl>
                 <Input placeholder="Título da campanha" {...field} />
               </FormControl>
-              <FormDescription>
-                Este é o nome público da campanha.
-              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
         />
         <FormField
           control={form.control}
-          name="title"
+          name="description"
           render={({ field }) => (
             <FormItem>
               <FormLabel className="text-lg font-semibold">Descrição</FormLabel>
               <FormControl>
-                <Input placeholder="Título da campanha" {...field} />
+                <Input placeholder="Descrição da campanha" {...field} />
               </FormControl>
-              <FormDescription>Este é a descrição do sorteio.</FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -129,15 +109,16 @@ const ConfigSet: React.FC = () => {
                     <SelectValue placeholder="Selecione um tipo" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="tipo1">Tipo 1</SelectItem>
-                    <SelectItem value="tipo2">Tipo 2</SelectItem>
-                    <SelectItem value="tipo3">Tipo 3</SelectItem>
+                    <SelectItem value="cartela_de_numeros">
+                      Cartela de Números
+                    </SelectItem>
+                    <SelectItem value="lista_de_premios">
+                      Lista de Prêmios
+                    </SelectItem>
+                    <SelectItem value="numero_unico">Número Único</SelectItem>
                   </SelectContent>
                 </Select>
               </FormControl>
-              <FormDescription>
-                Selecione o tipo de rifa para a campanha.
-              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -145,11 +126,26 @@ const ConfigSet: React.FC = () => {
         <div className="grid grid-cols-2 gap-4">
           <FormField
             control={form.control}
+            name="startDate"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-lg font-semibold">
+                  Data de Início
+                </FormLabel>
+                <FormControl>
+                  <Input type="date" placeholder="Data Inicial" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
             name="endDate"
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-lg font-semibold">
-                  Data Do Sorteio{" "}
+                  Data do Sorteio
                 </FormLabel>
                 <FormControl>
                   <Input type="date" placeholder="Data Final" {...field} />

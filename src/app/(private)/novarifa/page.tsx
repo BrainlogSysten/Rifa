@@ -9,6 +9,11 @@ import AwardSet from "./(components)/PremioSet/page";
 const Campaign: React.FC = () => {
   const [activeComponent, setActiveComponent] = useState<"config" | "award" | "arrecadacao" | "apresentacao">("config");
 
+  const handleConfigData = (formData: FormData) => {
+    const dataObject = Object.fromEntries(formData.entries());
+    console.log(dataObject,"aquiiiiii");  // Manipule ou use os dados conforme necessário
+  };
+
   return (
     <div className="h-full w-full flex flex-col gap-3 relative">
       <h1 className="font-semibold text-2xl flex gap-2 items-center mb-3">
@@ -47,8 +52,8 @@ const Campaign: React.FC = () => {
           </div>
           <Separator />
         </div>
-        <div className="flex flex-col gap-3 justify-center items-center h-5/6">
-          {activeComponent === "config" && <ConfigSet />}
+        <div className="flex flex-col gap-3 items-center h-5/6 w-full overflow-hidden">
+          {activeComponent === "config" && <ConfigSet sendData={(data)=>{handleConfigData(data),setActiveComponent("award")}} />}
           {activeComponent === "award" && <AwardSet />}
           {/* Adicione aqui os outros componentes conforme necessário */}
         </div>
