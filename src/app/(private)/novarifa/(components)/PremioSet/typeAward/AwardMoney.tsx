@@ -13,14 +13,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { MdAddAPhoto } from "react-icons/md";
 import { Input } from "@/components/ui/input";
+import Image from "next/image";
 import { z } from "zod";
 import createNewAwardMoney from "@/app/schema/createNewAwardMoney";
 
 type CreateNewRuffle = z.infer<typeof createNewAwardMoney>;
 
 interface Props {
-  sendData: (data: FormData) => void;
-  receiveData?: (data: FormData) => void;
+
 }
 
 const AwardMoney: FC<Props> = (props) => {
@@ -37,7 +37,7 @@ const AwardMoney: FC<Props> = (props) => {
   });
 
   useEffect(() => {
-    const savedData = localStorage.getItem("formDataAward");
+    const savedData = localStorage.getItem("AwardMoney");
     if (savedData) {
       const parsedData = JSON.parse(savedData);
       form.reset(parsedData);
@@ -53,8 +53,8 @@ const AwardMoney: FC<Props> = (props) => {
       if (selectedFile) {
         formData.append("Image", selectedFile);
       }
+      localStorage.setItem("AwardMoney", JSON.stringify(data));
 
-      return props.sendData(formData);
     } catch (error) {
       console.error("Erro durante a submissão:", error);
     }
@@ -70,7 +70,7 @@ const AwardMoney: FC<Props> = (props) => {
   };
 
   return (
-    <div className="h-5/6">
+    <div className="h-5/6 p-4">
       <Form {...form}>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
@@ -78,7 +78,7 @@ const AwardMoney: FC<Props> = (props) => {
         >
           <div className="w-full flex gap-6 h-full">
             <div className="w-full flex flex-col justify-between">
-              <div className="">
+              <div className="flex flex-col gap-8">
                 <FormField
                   control={form.control}
                   name="Title"
@@ -127,13 +127,15 @@ const AwardMoney: FC<Props> = (props) => {
                 <FormItem className="w-full">
                   <label
                     htmlFor={`image-upload`}
-                    className="cursor-pointer bg-gray-200 flex justify-center items-center w-full h-5/6 p-14 rounded-xl"
+                    className="cursor-pointer bg-gray-200 flex justify-center items-center w-full h-5/6 p-14 rounded-xl relative"
                   >
                     {previewImage ? (
-                      <img
+                      <Image
                         src={previewImage}
                         alt="Preview"
-                        className="w-full h-full object-cover rounded-xl"
+                        layout="fill"
+                        objectFit="cover"
+                        className="rounded-xl shadow-2xl"
                       />
                     ) : (
                       <MdAddAPhoto size={30} />

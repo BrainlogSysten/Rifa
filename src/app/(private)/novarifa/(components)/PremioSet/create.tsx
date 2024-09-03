@@ -3,15 +3,12 @@ import { useState } from "react";
 import AwardObject from "./typeAward/AwardObject";
 import AwardMoney from "./typeAward/AwardMoney";
 
-interface Props {}
+interface Props {
+  
+}
 
 const CreateAwardSet: React.FC<Props> = () => {
   const [typeAward, setTypeAward] = useState<"produtos" | "dinheiro">("produtos");
-
-  const handleConfigData = (formData: FormData) => {
-    const dataObject = Object.fromEntries(formData.entries());
-    console.log(dataObject,"aquiiiiii");  // Manipule ou use os dados conforme necessário
-  };
 
   return (
     <div className="h-full">
@@ -28,7 +25,7 @@ const CreateAwardSet: React.FC<Props> = () => {
         </SelectContent>
       </Select>
 
-      {typeAward === "produtos" ? <AwardObject /> : <AwardMoney sendData={(data)=>{handleConfigData(data)}} />}
+      {typeAward === "produtos" ? <AwardObject/> : <AwardMoney/>}
     </div>
   );
 };
