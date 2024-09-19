@@ -39,7 +39,6 @@ const Login: React.FC<LoginProps> = () => {
         password: formData.password,
       });
 
-      console.log(result);
 
       if (result == 200) {
         push('/home');

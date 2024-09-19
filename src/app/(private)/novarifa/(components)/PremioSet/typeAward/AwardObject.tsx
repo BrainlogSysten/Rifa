@@ -17,11 +17,13 @@ import { Input } from "@/components/ui/input";
 import { z } from "zod";
 import Image from "next/image";
 import createNewAwardProduct from "@/app/schema/createNewAwardProduct";
+import { v4 as uuidv4 } from "uuid";
+import { CreateAwardtype } from "@/types/CreateAwardtype";
 
-type CreateRifaFormType = z.infer<typeof createNewAwardProduct>;
+type CreateAwardProd = z.infer<typeof createNewAwardProduct>;
 
 interface Props {
-
+  sendData: (data: CreateAwardtype) => void; // Modificado para incluir Id
 }
 
 const AwardObject: FC<Props> = (props) => {
@@ -32,7 +34,7 @@ const AwardObject: FC<Props> = (props) => {
     null,
   ]);
 
-  const form = useForm<CreateRifaFormType>({
+  const form = useForm<CreateAwardProd>({
     resolver: zodResolver(createNewAwardProduct),
     defaultValues: {
       Title: "",
@@ -83,40 +85,28 @@ const AwardObject: FC<Props> = (props) => {
     onChange({ target: { files: null } });
   };
 
-  const onSubmit = async (data: CreateRifaFormType) => {
+  const onSubmit = async (data: CreateAwardProd) => {
     try {
-      const formData = new FormData();
+      const generatedId = uuidv4(); // Gerar um ID único
+      // Criar um objeto que segue o tipo CreateAwardtype
+      const createAwardData: CreateAwardtype = {
+        id: generatedId,
+        Title: data.Title,
+        Description: data.Description,
+        image1: data.image1,
+        image2: data.image2,
+        image3: data.image3,
+        image4: data.image4,
+      };
   
-      // Garantindo que Title e Description estão definidos
-      if (data.Title) {
-        formData.append("Title", data.Title);
-      }
-  
-      if (data.Description) {
-        formData.append("Description", data.Description);
-      }
-  
-      // Adicionando as imagens, se estiverem definidas
-      for (let i = 1; i <= 4; i++) {
-        const imageFile = data[`image${i}` as keyof CreateRifaFormType];
-        if (imageFile && imageFile[0]) {
-          formData.append(`image${i}`, imageFile[0]);
-        }
-      }
-      const haveItem = localStorage.getItem("AwardItem");
-      
-      if(haveItem){
-        
-        localStorage.setItem(`AwardItem`, JSON.stringify(data));
-      }
-      // Salvar dados no localStorage
-      
+      // Enviar os dados
+      props.sendData(createAwardData);
       
     } catch (error) {
       console.error("Erro durante a submissão:", error);
     }
   };
-
+  
   return (
     <div className="h-full">
       <Form {...form}>
@@ -224,7 +214,7 @@ const AwardObject: FC<Props> = (props) => {
                   <FormField
                     key={index + 1}
                     control={form.control}
-                    name={`image${index + 2}` as keyof CreateRifaFormType}
+                    name={`image${index + 2}` as keyof CreateAwardProd}
                     render={({ field }) => (
                       <FormItem>
                         <label

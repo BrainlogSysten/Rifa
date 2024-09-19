@@ -2,9 +2,12 @@ import { z } from "zod";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import CreateAwardSet from "./create";
-import GetLocalStorage from "@/app/utils/utils";
 import createNewAwardProduct from "@/app/schema/createNewAwardProduct";
 import createNewAwardMoney from "@/app/schema/createNewAwardMoney";
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import Typography from '@mui/material/Typography';
+
+
 
 type CreateRifaFormType = z.infer<typeof createNewAwardProduct>;
 type CreateNewRuffle = z.infer<typeof createNewAwardMoney>;
@@ -15,32 +18,10 @@ const AwardSet: React.FC = () => {
     (CreateRifaFormType | CreateNewRuffle)[]
   >([]);
 
-  useEffect(() => {
-    const awardProd = GetLocalStorage("AwardItem");
-    const awardMoney = GetLocalStorage("AwardMoney");
-
-    if (awardProd) {
-      const parsedAwardProd = JSON.parse(awardProd) as CreateRifaFormType;
-      setAwardItems((prevItems) => {
-        const alreadyExists = prevItems.some(
-          (item) => item.Title === parsedAwardProd.Title
-        );
-        return alreadyExists ? prevItems : [...prevItems, parsedAwardProd];
-      });
-    }
-
-    if (awardMoney) {
-      const parsedAwardMoney = JSON.parse(awardMoney) as CreateNewRuffle;
-      setAwardItems((prevItems) => {
-        const alreadyExists = prevItems.some(
-          (item) => item.Title === parsedAwardMoney.Title
-        );
-        return alreadyExists ? prevItems : [...prevItems, parsedAwardMoney];
-      });
-    }
-  }, []);
-
-  console.log(awardItems, " aqui");
+  const handleSendData = (data: (CreateRifaFormType | CreateNewRuffle)[]) => {
+    setAwardItems((prevItems) => [...prevItems, ...data]);
+    setCreate(false);
+  };
 
   return (
     <div className="w-full h-full">
@@ -50,23 +31,23 @@ const AwardSet: React.FC = () => {
             <div className="w-full flex flex-col items-center gap-4">
               <h1>Lista de Prêmios Cadastrados</h1>
               {awardItems.map((item, index) => (
-                <div
-                  key={index}
-                  className="w-full max-w-md p-4 border rounded-lg shadow-lg"
-                >
-                  <h2 className="text-2xl font-bold">{item.Title}</h2>
-                  {("Description" in item && item.Description) && (
-                    <p>{item.Description}</p>
-                  )}
-                  {("Value" in item && item.Value) && (
-                    <p>Valor: {item.Value}</p>
-                  )}
-                  {/* Outros campos podem ser adicionados aqui */}
-                </div>
+                <Card className="w-80 shadow-lg rounded-lg overflow-hidden" key={index}>
+                <CardHeader>
+                  <img src={item.image1} alt="Imagem" className="w-full h-40 object-cover" />
+                </CardHeader>
+                <CardContent className="p-4">
+                  <Typography variant="h5" className="font-semibold mb-2">
+                    {item.Title}
+                  </Typography>
+                  <Typography variant="body2" color="textSecondary">
+                    {item.Description}
+                  </Typography>
+                </CardContent>
+              </Card>
               ))}
             </div>
           ) : (
-            <>
+            <div className="w-full flex flex-col items-center gap-4">
               <h1>Cadastre um Prêmio</h1>
               <Button
                 type="submit"
@@ -77,11 +58,11 @@ const AwardSet: React.FC = () => {
               >
                 Cadastrar
               </Button>
-            </>
+            </div>
           )}
         </div>
       ) : (
-        <CreateAwardSet />
+        <CreateAwardSet sendData={handleSendData} />
       )}
     </div>
   );

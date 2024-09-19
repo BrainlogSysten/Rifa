@@ -16,11 +16,13 @@ import { Input } from "@/components/ui/input";
 import Image from "next/image";
 import { z } from "zod";
 import createNewAwardMoney from "@/app/schema/createNewAwardMoney";
+import { CreateAwardMoneyType } from "@/types/CreateAwardMoneyType";
+import { v4 as uuidv4 } from "uuid";
 
 type CreateNewRuffle = z.infer<typeof createNewAwardMoney>;
 
 interface Props {
-
+  sendData: (data: CreateAwardMoneyType) => void;
 }
 
 const AwardMoney: FC<Props> = (props) => {
@@ -46,15 +48,23 @@ const AwardMoney: FC<Props> = (props) => {
 
   const onSubmit = async (data: CreateNewRuffle) => {
     try {
-      localStorage.setItem("formData", JSON.stringify(data));
-      let formData = new FormData();
-      formData.append("Title", data.Title);
-      formData.append("Value", data.Value);
-      if (selectedFile) {
-        formData.append("Image", selectedFile);
-      }
-      localStorage.setItem("AwardMoney", JSON.stringify(data));
+      const generatedId = uuidv4(); // Utilizando a função uuidv4 corretamente
 
+      // Cria um objeto que segue o tipo CreateAwardMoneyType
+      const createAwardMoneyData: CreateAwardMoneyType = {
+        Id: generatedId,
+        Title: data.Title,
+        Value: data.Value,
+        // Inclua a imagem como string ou mantenha o arquivo se necessário
+        Image: selectedFile ? selectedFile : null,
+      };
+
+      // Armazena os dados no localStorage se necessário
+      localStorage.setItem("formData", JSON.stringify(createAwardMoneyData));
+      localStorage.setItem("AwardMoney", JSON.stringify(createAwardMoneyData));
+
+      // Envia os dados
+      props.sendData(createAwardMoneyData);
     } catch (error) {
       console.error("Erro durante a submissão:", error);
     }
@@ -133,8 +143,8 @@ const AwardMoney: FC<Props> = (props) => {
                       <Image
                         src={previewImage}
                         alt="Preview"
-                        layout="fill"
-                        objectFit="cover"
+                        fill
+                        style={{ objectFit: 'cover' }}
                         className="rounded-xl shadow-2xl"
                       />
                     ) : (

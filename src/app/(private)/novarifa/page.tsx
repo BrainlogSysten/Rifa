@@ -11,7 +11,7 @@ const Campaign: React.FC = () => {
 
   const handleConfigData = (formData: FormData) => {
     const dataObject = Object.fromEntries(formData.entries());
-    console.log(dataObject,"aquiiiiii");  // Manipule ou use os dados conforme necessário
+
   };
 
   return (

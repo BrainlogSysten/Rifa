@@ -14,7 +14,6 @@ export async function loginEmployer(params: RequestLoginEmployer) {
 
     if (token) {
       localStorage.setItem('userToken', token);
-      console.log(response);
       return response.status; 
     }
   } catch (error: any) {

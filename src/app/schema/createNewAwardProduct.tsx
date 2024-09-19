@@ -1,6 +1,9 @@
 import { z } from "zod";
 
 const createNewAwardProduct = z.object({
+  Id: z.string().uuid({
+    message: "O ID deve ser um UUID válido.",
+  }).optional(),
   Title: z.string().min(2, {
     message: "O título deve ter pelo menos 2 caracteres.",
   }),
