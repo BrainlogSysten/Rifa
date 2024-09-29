@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import Image from "next/image";
 
 import { SyntheticEvent, useCallback, useState } from "react";
-import { toast } from 'react-toastify';
 import { requestLoginEmployeer } from "@/types/authTypes"; 
 import { loginEmployer } from "@/http/api-core-sln"; 
 import { useRouter } from "next/navigation";
@@ -15,7 +14,7 @@ interface LoginProps {
 }
 
 const Login: React.FC<LoginProps> = () => {
-  const { push } = useRouter();
+  const { replace } = useRouter();
 
   const [formData, setFormData] = useState<requestLoginEmployeer>({
     email: '',
@@ -38,16 +37,11 @@ const Login: React.FC<LoginProps> = () => {
         email: formData.email,
         password: formData.password,
       });
-
-
-      if (result == 200) {
-        push('/home');
-      } else {
-        toast.error('Usuario não encontrado ');
-      }
+      replace('/home');
     } catch (error) {
+      console.log("error")
       console.error(error);
-      error == 401 && toast.error('Usuario não encontrado ');
+
     }
   }, [formData]);
 

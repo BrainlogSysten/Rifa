@@ -1,6 +1,9 @@
+import { Url } from "next/dist/shared/lib/router/router";
+
 export interface CreateAwardMoneyType {
     Id: string;
     Title: string;
     Value: string;
-    Image?: File | null;
+    image?: File | null | Url | string  ;
+    tagType?: "Money",
   }

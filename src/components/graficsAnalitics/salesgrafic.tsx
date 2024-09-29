@@ -57,7 +57,7 @@ export function SalesGraphic() {
       <CardHeader>
         <CardTitle>Vendas: </CardTitle>
         <Popover>
-          <PopoverTrigger asChild >
+          <PopoverTrigger asChild>
             <Button
               variant={"outline"}
               className={cn("pl-3 text-left font-normal")}
@@ -80,27 +80,26 @@ export function SalesGraphic() {
         </Popover>
       </CardHeader>
       <CardContent>
-        <div >
-        <ChartContainer config={chartConfig}>
-          <BarChart accessibilityLayer data={chartData} barSize={33} >
-            <CartesianGrid  vertical={false} />
-            <XAxis
-              dataKey="month"
-              tickLine={false}
-              tickMargin={4}
-              axisLine={false}
-              tickFormatter={(value) => value.slice(0, 4)}
-            />
-            <ChartTooltip
-              cursor={false}
-              content={<ChartTooltipContent indicator="dashed" />}
-            />
-            <Bar dataKey="Usuarios" fill="var(--color-Usuarios)" radius={4} />
-            <Bar dataKey="Rifas" fill="var(--color-Rifas)" radius={4} />
-          </BarChart>
-        </ChartContainer>
+        <div>
+          <ChartContainer config={chartConfig}>
+            <BarChart accessibilityLayer data={chartData} barSize={33}>
+              <CartesianGrid vertical={false} />
+              <XAxis
+                dataKey="month"
+                tickLine={false}
+                tickMargin={4}
+                axisLine={false}
+                tickFormatter={(value = "") => value.slice(0, 4)} // Parâmetro padrão aqui
+              />
+              <ChartTooltip
+                cursor={false}
+                content={<ChartTooltipContent indicator="dashed" />}
+              />
+              <Bar dataKey="Usuarios" fill="var(--color-Usuarios)" radius={4} />
+              <Bar dataKey="Rifas" fill="var(--color-Rifas)" radius={4} />
+            </BarChart>
+          </ChartContainer>
         </div>
-      
       </CardContent>
     </Card>
   );

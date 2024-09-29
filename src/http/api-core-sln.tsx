@@ -1,5 +1,6 @@
 import axios, { AxiosResponse } from 'axios';
 import instance from './axiosInstance'; 
+import { toast } from 'react-toastify';
 
 interface RequestLoginEmployer {
   email: string;
@@ -17,8 +18,8 @@ export async function loginEmployer(params: RequestLoginEmployer) {
       return response.status; 
     }
   } catch (error: any) {
-    console.error("Erro ao fazer login:", error);
-    return (error); 
+    toast.error('Usuario não encontrado ');
+    return (error.response.status); 
   }
 }
 

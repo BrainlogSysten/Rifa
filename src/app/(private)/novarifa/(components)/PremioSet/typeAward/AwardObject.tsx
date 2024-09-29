@@ -18,12 +18,12 @@ import { z } from "zod";
 import Image from "next/image";
 import createNewAwardProduct from "@/app/schema/createNewAwardProduct";
 import { v4 as uuidv4 } from "uuid";
-import { CreateAwardtype } from "@/types/CreateAwardtype";
+import { convertToBase64 } from "@/utils/utils";
 
 type CreateAwardProd = z.infer<typeof createNewAwardProduct>;
 
 interface Props {
-  sendData: (data: CreateAwardtype) => void; // Modificado para incluir Id
+  sendData: (data: CreateAwardProd) => void; // Modificado para incluir Id
 }
 
 const AwardObject: FC<Props> = (props) => {
@@ -55,6 +55,20 @@ const AwardObject: FC<Props> = (props) => {
     }
   }, [form]);
 
+  const handleImageRemove = (
+    index: number,
+    onChange: (...event: any[]) => void
+  ) => {
+    setPreviews((prev) => {
+      const newPreviews = [...prev];
+      newPreviews[index] = null;
+      return newPreviews;
+    });
+
+    // Limpar o campo de arquivo correspondente
+    onChange({ target: { files: null } });
+  };
+
   const handleImageChange = (
     e: React.ChangeEvent<HTMLInputElement>,
     index: number,
@@ -70,43 +84,32 @@ const AwardObject: FC<Props> = (props) => {
         return newPreviews;
       });
 
-      onChange(e); // Passando o evento para o form hook
+      onChange(file); // Passa o arquivo para o form hook
     }
-  };
-
-  const handleImageRemove = (index: number, onChange: (...event: any[]) => void) => {
-    setPreviews((prev) => {
-      const newPreviews = [...prev];
-      newPreviews[index] = null;
-      return newPreviews;
-    });
-
-    // Limpar o campo de arquivo correspondente
-    onChange({ target: { files: null } });
   };
 
   const onSubmit = async (data: CreateAwardProd) => {
     try {
       const generatedId = uuidv4(); // Gerar um ID único
-      // Criar um objeto que segue o tipo CreateAwardtype
-      const createAwardData: CreateAwardtype = {
-        id: generatedId,
+
+      // Criar um objeto que segue o tipo CreateAwardProd
+      const createAwardData: CreateAwardProd = {
+        Id: generatedId,
         Title: data.Title,
         Description: data.Description,
-        image1: data.image1,
-        image2: data.image2,
-        image3: data.image3,
-        image4: data.image4,
+        image1: data.image1 instanceof File ? URL.createObjectURL(data.image1) : null,
+        image2: data.image2 instanceof File ? URL.createObjectURL(data.image2) : null,
+        image3: data.image3 instanceof File ? URL.createObjectURL(data.image3) : null,
+        image4: data.image4 instanceof File ? URL.createObjectURL(data.image4) : null,
       };
-  
+
       // Enviar os dados
       props.sendData(createAwardData);
-      
     } catch (error) {
       console.error("Erro durante a submissão:", error);
     }
   };
-  
+
   return (
     <div className="h-full">
       <Form {...form}>
@@ -174,16 +177,14 @@ const AwardObject: FC<Props> = (props) => {
                       className="cursor-pointer bg-gray-200 w-full h-48 flex justify-center items-center p-2 rounded-xl relative"
                     >
                       {previews[0] && (
-                        <>
-                          <FaRegTrashAlt
-                            size={30}
-                            className="absolute fill-red-800 top-3 right-3 cursor-pointer"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleImageRemove(0, field.onChange);
-                            }}
-                          />
-                        </>
+                        <FaRegTrashAlt
+                          size={30}
+                          className="absolute fill-red-800 top-3 right-3 cursor-pointer"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleImageRemove(0, field.onChange);
+                          }}
+                        />
                       )}
                       {previews[0] ? (
                         <Image

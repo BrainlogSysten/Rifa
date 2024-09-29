@@ -39,7 +39,6 @@ const SideMenu: React.FC = () => {
           to="/configuracoes"
           selected={true}
         ></SelectMenu>
-        <div></div>
       </div>
 
       <button

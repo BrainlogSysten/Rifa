@@ -7,6 +7,7 @@ import createNewAwardMoney from "@/app/schema/createNewAwardMoney";
 import { z } from "zod";
 import { CreateAwardMoneyType } from "@/types/CreateAwardMoneyType";
 import { CreateAwardtype } from "@/types/CreateAwardtype";
+import { v4 as uuidv4 } from "uuid";  // Importa a função para gerar o ID
 
 // Tipos baseados nos esquemas Zod
 type CreateProdAward = z.infer<typeof createNewAwardProduct>;
@@ -30,24 +31,26 @@ const CreateAwardSet: React.FC<Props> = (props) => {
           return prevDataSet;
         }
       }
-
-      // Conversão do item para os tipos corretos, ajustando a propriedade Id para id
       let newItem: CreateAwardtype | CreateAwardMoneyType;
       if ("Value" in item) {
         newItem = {
           ...item,
-          id: item.Id ?? "", // Garante que o campo 'id' seja preenchido corretamente
-          tagType: "Dinheiro",
+          Id: uuidv4(), // Atribui o ID gerado
+          tagType: "Money",
         } as CreateAwardMoneyType;
       } else {
         newItem = {
           ...item,
-          id: item.Id ?? "", // Garante que o campo 'id' seja preenchido corretamente
-          tagType: "Produto",
+          Id: uuidv4(), // Atribui o ID gerado
+          tagType: "Product",
         } as CreateAwardtype;
       }
 
-      return [...prevDataSet, newItem];
+      // Salva o novo item no localStorage
+      const updatedDataSet = [...prevDataSet, newItem];
+      localStorage.setItem("awards", JSON.stringify(updatedDataSet));
+
+      return updatedDataSet;
     });
   };
 
@@ -68,7 +71,7 @@ const CreateAwardSet: React.FC<Props> = (props) => {
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="produtos">Prêmio em produtos</SelectItem>
-          <SelectItem value="dinheiro">Prêmio em dinheiro</SelectItem>
+          <SelectItem value="Money">Prêmio em dinheiro</SelectItem>
         </SelectContent>
       </Select>
 

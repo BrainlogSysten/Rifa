@@ -17,6 +17,19 @@ export const checkUserAuthenticated = (): boolean => {
   return false;
 };
 
+export const convertToBase64 = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      resolve(reader.result as string);
+    };
+    reader.onerror = (error) => {
+      reject(error);
+    };
+    reader.readAsDataURL(file);
+  });
+};
+
 export const PrivateRoute = ({ children }: { children: ReactNode }) => {
   const { push } = useRouter();
   const pathname = usePathname();
