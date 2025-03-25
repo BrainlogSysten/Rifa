@@ -19,6 +19,24 @@ const CreateNewRuffle = z.object({
   }), // Valida que a data final não está vazia
 
   description: z.string().optional(), // Descrição é opcional
+
+  terms: z.string().optional(), // Termos são opcionais
+
+  ticketPrice: z.number().min(1, {
+    message: "O valor do bilhete deve ser maior que 0.",
+  }), // Valida que o preço do bilhete é um número maior que 0
+
+  maxTicketsPerUser: z.number().min(1, {
+    message: "O número máximo de bilhetes por usuário deve ser pelo menos 1.",
+  }), // Valida que o número máximo de bilhetes por usuário é maior que 0
+
+  maxParticipants: z.number().min(1, {
+    message: "O número máximo de participantes deve ser pelo menos 1.",
+  }), // Valida que o número máximo de participantes é maior que 0
+
+  paymentMethod: z.enum(["credit_card", "pix", "bank_transfer"], {
+    required_error: "Selecione um método de pagamento.",
+  }), // Valida que o método de pagamento é um dos valores permitidos
 });
 
 export default CreateNewRuffle;

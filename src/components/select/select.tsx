@@ -60,25 +60,21 @@ export const SelectMenu: React.FC<SelectMenuProps> = (props) => {
       <button
         title={`Abrir painel de configuração do ${props.title}`}
         className={`text-slate-500 w-full ${
-          showOptions || props.selected ? "bg-gray-900/80 text-white" : ""
-        } text-left font-semibold  hover:bg-gray-900/60 justify-center items-center  hover:text-black/50 rounded-md grid p-2 ${
+          showOptions 
+        } text-left font-semibold text-2xl  hover:bg-slate-500/20 justify-center items-center  hover:text-black/20 rounded-2xl grid p-2 ${
           props.reduceMode ? "grid-cols-1" : "grid-cols-5"
         } items-center gap-x-3 button-container`}
         onClick={handleClick}
       >
         {renderIcon()}
         <p
-          className={`text-wrap text-sm grid-flow-col ${
+          className={`text-wrap text-lg grid-flow-col ${
             props.reduceMode ? "" : "col-span-3"
           }`}
         >
           {!props.reduceMode && props.title}
         </p>
-        {!props.reduceMode && (
-          <div className="">
-              <IoIosArrowForward />
-          </div>
-        )}
+
       </button>
       {showOptions && (
         <div className="border-l-2 border-green-600 flex justify-start flex-col gap-y-2 pl-3 relative left-5 transition-opacity">

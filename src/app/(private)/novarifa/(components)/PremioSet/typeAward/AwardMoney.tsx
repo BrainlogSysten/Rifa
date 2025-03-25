@@ -90,8 +90,8 @@ const AwardMoney: FC<Props> = (props) => {
   const formatValue = (value: string) => {
     return value
       .replace(/\D/g, "") // Remove todos os caracteres não numéricos
-      .replace(/(\d)(\d{2})$/, "$1,$2") // Adiciona a vírgula antes dos dois últimos dígitos
-      .replace(/(?=(\d{3})+(?!\d))/g, "."); // Adiciona ponto a cada 3 dígitos
+      .replace(/(\d{1,3})(\d{3})(\d{2})$/, "$1.$2,$3") // Adiciona ponto antes dos milhares e vírgula para os centavos
+      .replace(/(\d)(?=(\d{3})+\.)/g, "$1."); // Adiciona pontos para os milhares
   };
 
   return (
@@ -167,7 +167,7 @@ const AwardMoney: FC<Props> = (props) => {
                   >
                     {previewImage && (
                       <FaRegTrashAlt
-                        className="absolute fill-red-800 top-4 right-3 cursor-pointer z-50 w-10 h-10 bg-red-500"
+                        className="absolute fill-red-800 top-4 right-3 cursor-pointer z-50 w-10 h-10"
                         onClick={(e) => {
                           setPreviewImage(null);
                           setSelectedFile(null);

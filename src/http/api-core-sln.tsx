@@ -9,7 +9,7 @@ interface RequestLoginEmployer {
 
 export async function loginEmployer(params: RequestLoginEmployer) {
   try {
-    const response = await instance.post('/Auth/loginemployer', params);
+    const response = await instance.post('/auth/loginemployer', params);
 
     const { token, bearerCode } = response.data;
 
