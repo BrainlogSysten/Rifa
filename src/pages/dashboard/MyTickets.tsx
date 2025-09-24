@@ -1,389 +1,419 @@
-import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
-import { 
-  Ticket as TicketIcon,
+import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import {
+  Ticket,
+  Search,
+  Filter,
+  Calendar,
   Trophy,
   Clock,
   CheckCircle,
   XCircle,
-  Calendar,
-  DollarSign,
-  Filter,
-  Search,
+  Download,
   Eye,
-  Star
-} from 'lucide-react'
-import { ticketService, raffleService, Ticket, Raffle } from '../../services/api'
-import { useAuth } from '../../contexts/AuthContext'
-import toast from 'react-hot-toast'
+  DollarSign,
+  TrendingUp,
+  Hash,
+  Gift,
+  AlertTriangle,
+  ChevronRight
+} from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { api } from '../../services/api';
 
-type FilterStatus = 'all' | 'active' | 'finished' | 'winners'
-
-interface TicketWithRaffle extends Ticket {
-  raffle?: Raffle
+interface TicketData {
+  id: string;
+  raffleId: string;
+  raffleTitle: string;
+  raffleImage?: string;
+  numbers: number[];
+  purchaseDate: string;
+  purchasePrice: number;
+  status: 'active' | 'drawn' | 'won' | 'expired' | 'cancelled';
+  drawDate: string;
+  prizeValue?: number;
+  prizeDescription?: string;
+  transactionId: string;
+  paymentMethod: string;
 }
 
-export default function MyTickets() {
-  const { user } = useAuth()
-  const [tickets, setTickets] = useState<TicketWithRaffle[]>([])
-  const [filteredTickets, setFilteredTickets] = useState<TicketWithRaffle[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [activeFilter, setActiveFilter] = useState<FilterStatus>('all')
-  const [searchTerm, setSearchTerm] = useState('')
+const MyTickets: React.FC = () => {
+  const [tickets, setTickets] = useState<TicketData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortBy, setSortBy] = useState('recent');
 
+  // Fetch tickets from API
   useEffect(() => {
-    if (user?.id) {
-      loadMyTickets()
-    }
-  }, [user?.id])
+    fetchMyTickets();
+  }, []);
 
-  useEffect(() => {
-    filterTickets()
-  }, [tickets, activeFilter, searchTerm])
-
-  const loadMyTickets = async () => {
+  const fetchMyTickets = async () => {
     try {
-      setIsLoading(true)
-      const userTickets = await ticketService.getByUser(user!.id)
-      
-      const ticketsWithRaffles = await Promise.all(
-        userTickets.map(async (ticket) => {
-          try {
-            const raffle = await raffleService.getById(ticket.raffleId)
-            return { ...ticket, raffle }
-          } catch (error) {
-            console.error(`Error loading raffle ${ticket.raffleId}:`, error)
-            return ticket
-          }
-        })
-      )
+      setLoading(true);
+      // This would be the actual API call
+      // const response = await api.get('/tickets/my-tickets');
 
-      setTickets(ticketsWithRaffles)
+      // Mock data for now
+      const mockTickets: TicketData[] = [
+        {
+          id: '1',
+          raffleId: 'raffle-1',
+          raffleTitle: 'iPhone 15 Pro Max 256GB',
+          raffleImage: '/images/placeholders/electronics1.jpg',
+          numbers: [42, 157, 289, 501, 723],
+          purchaseDate: '2024-01-15T10:30:00',
+          purchasePrice: 50,
+          status: 'active',
+          drawDate: '2024-02-15',
+          prizeValue: 8000,
+          prizeDescription: 'iPhone 15 Pro Max 256GB Titânio Natural',
+          transactionId: 'TRX123456789',
+          paymentMethod: 'PIX'
+        },
+        {
+          id: '2',
+          raffleId: 'raffle-2',
+          raffleTitle: 'MacBook Pro M3',
+          raffleImage: '/images/placeholders/electronics1.jpg',
+          numbers: [88, 234, 445],
+          purchaseDate: '2024-01-10T14:20:00',
+          purchasePrice: 75,
+          status: 'won',
+          drawDate: '2024-01-12',
+          prizeValue: 15000,
+          prizeDescription: 'MacBook Pro M3 14" 512GB',
+          transactionId: 'TRX987654321',
+          paymentMethod: 'Cartão de Crédito'
+        },
+        {
+          id: '3',
+          raffleId: 'raffle-3',
+          raffleTitle: 'PlayStation 5',
+          raffleImage: '/images/placeholders/gaming1.jpg',
+          numbers: [10, 55],
+          purchaseDate: '2023-12-20T09:15:00',
+          purchasePrice: 20,
+          status: 'drawn',
+          drawDate: '2023-12-31',
+          prizeValue: 4500,
+          prizeDescription: 'PlayStation 5 + 2 Controles',
+          transactionId: 'TRX456789123',
+          paymentMethod: 'PIX'
+        }
+      ];
+
+      setTickets(mockTickets);
     } catch (error) {
-      toast.error('Erro ao carregar seus bilhetes')
-      console.error('Error loading user tickets:', error)
+      console.error('Error fetching tickets:', error);
     } finally {
-      setIsLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
-  const filterTickets = () => {
-    let filtered = tickets
+  const getStatusBadge = (status: TicketData['status']) => {
+    const statusConfig = {
+      active: { color: 'bg-blue-500', icon: <Clock className="w-3 h-3" />, text: 'Ativo' },
+      drawn: { color: 'bg-gray-500', icon: <CheckCircle className="w-3 h-3" />, text: 'Sorteado' },
+      won: { color: 'bg-green-500', icon: <Trophy className="w-3 h-3" />, text: 'Ganhador!' },
+      expired: { color: 'bg-orange-500', icon: <XCircle className="w-3 h-3" />, text: 'Expirado' },
+      cancelled: { color: 'bg-red-500', icon: <XCircle className="w-3 h-3" />, text: 'Cancelado' }
+    };
 
-    switch (activeFilter) {
-      case 'active':
-        filtered = filtered.filter(ticket => ticket.raffle?.status === 'Active')
-        break
-      case 'finished':
-        filtered = filtered.filter(ticket => 
-          ticket.raffle?.status === 'Finished' || ticket.raffle?.status === 'Cancelled'
-        )
-        break
-      case 'winners':
-        filtered = filtered.filter(ticket => ticket.isWinner)
-        break
-      default:
-        break
-    }
-
-    if (searchTerm.trim()) {
-      filtered = filtered.filter(ticket => 
-        ticket.raffle?.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        ticket.value.toString().includes(searchTerm) ||
-        ticket.id.toLowerCase().includes(searchTerm.toLowerCase())
-      )
-    }
-
-    setFilteredTickets(filtered)
-  }
-
-  const getStatusBadge = (raffle?: Raffle) => {
-    if (!raffle) return null
-
-    switch (raffle.status) {
-      case 'Active':
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-success-100 text-success-800">
-            <Clock className="w-3 h-3 mr-1" />
-            Ativa
-          </span>
-        )
-      case 'Finished':
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-800">
-            <CheckCircle className="w-3 h-3 mr-1" />
-            Finalizada
-          </span>
-        )
-      case 'Cancelled':
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-danger-100 text-danger-800">
-            <XCircle className="w-3 h-3 mr-1" />
-            Cancelada
-          </span>
-        )
-      default:
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-            {raffle.status}
-          </span>
-        )
-    }
-  }
-
-  const calculateProgress = (raffle?: Raffle) => {
-    if (!raffle?.maxParticipants) return 0
-    const participants = 0
-    return (participants / raffle.maxParticipants) * 100
-  }
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    })
-  }
-
-  const getWinnerBadge = (ticket: TicketWithRaffle) => {
-    if (!ticket.isWinner) return null
-    
+    const config = statusConfig[status];
     return (
-      <div className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-secondary-400 to-secondary-500 text-white animate-pulse">
-        <Trophy className="w-3 h-3 mr-1" />
-        Bilhete Premiado!
-      </div>
-    )
-  }
+      <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs text-white ${config.color}`}>
+        {config.icon}
+        {config.text}
+      </span>
+    );
+  };
 
-  if (isLoading) {
+  const filteredTickets = tickets.filter(ticket => {
+    if (filter !== 'all' && ticket.status !== filter) return false;
+    if (searchTerm && !ticket.raffleTitle.toLowerCase().includes(searchTerm.toLowerCase())) return false;
+    return true;
+  });
+
+  const sortedTickets = [...filteredTickets].sort((a, b) => {
+    switch (sortBy) {
+      case 'recent':
+        return new Date(b.purchaseDate).getTime() - new Date(a.purchaseDate).getTime();
+      case 'oldest':
+        return new Date(a.purchaseDate).getTime() - new Date(b.purchaseDate).getTime();
+      case 'price_high':
+        return b.purchasePrice - a.purchasePrice;
+      case 'price_low':
+        return a.purchasePrice - b.purchasePrice;
+      default:
+        return 0;
+    }
+  });
+
+  // Calculate statistics
+  const stats = {
+    total: tickets.length,
+    active: tickets.filter(t => t.status === 'active').length,
+    won: tickets.filter(t => t.status === 'won').length,
+    totalSpent: tickets.reduce((acc, t) => acc + t.purchasePrice, 0),
+    totalWon: tickets.filter(t => t.status === 'won').reduce((acc, t) => acc + (t.prizeValue || 0), 0)
+  };
+
+  if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500"></div>
       </div>
-    )
+    );
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Meus Bilhetes</h1>
-          <p className="text-gray-600 mt-1">
-            Gerencie todos os seus bilhetes de rifa em um só lugar
-          </p>
+          <h1 className="text-3xl font-bold text-white">Meus Bilhetes</h1>
+          <p className="text-gray-400 mt-1">Acompanhe todos os seus bilhetes e sorteios</p>
+        </div>
+        <Link to="/raffles" className="btn-primary">
+          <Ticket className="w-5 h-5" />
+          Comprar Mais Bilhetes
+        </Link>
+      </div>
+
+      {/* Statistics Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="card p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Ticket className="w-5 h-5 text-blue-400" />
+            <p className="text-gray-400 text-sm">Total</p>
+          </div>
+          <p className="text-2xl font-bold text-white">{stats.total}</p>
+        </div>
+        <div className="card p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Clock className="w-5 h-5 text-yellow-400" />
+            <p className="text-gray-400 text-sm">Ativos</p>
+          </div>
+          <p className="text-2xl font-bold text-white">{stats.active}</p>
+        </div>
+        <div className="card p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Trophy className="w-5 h-5 text-green-400" />
+            <p className="text-gray-400 text-sm">Ganhos</p>
+          </div>
+          <p className="text-2xl font-bold text-green-400">{stats.won}</p>
+        </div>
+        <div className="card p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <DollarSign className="w-5 h-5 text-red-400" />
+            <p className="text-gray-400 text-sm">Investido</p>
+          </div>
+          <p className="text-xl font-bold text-white">R$ {stats.totalSpent.toLocaleString('pt-BR')}</p>
+        </div>
+        <div className="card p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <TrendingUp className="w-5 h-5 text-green-400" />
+            <p className="text-gray-400 text-sm">Prêmios</p>
+          </div>
+          <p className="text-xl font-bold text-green-400">R$ {stats.totalWon.toLocaleString('pt-BR')}</p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Total de Bilhetes</p>
-              <p className="text-2xl font-bold text-gray-900">{tickets.length}</p>
+      {/* Won Alert */}
+      {stats.won > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="card p-4 bg-gradient-to-r from-green-500/20 to-green-600/20 border border-green-500/30"
+        >
+          <div className="flex items-center gap-3">
+            <Trophy className="w-6 h-6 text-green-400" />
+            <div className="flex-1">
+              <p className="text-white font-semibold">Parabéns! Você tem {stats.won} bilhete(s) premiado(s)!</p>
+              <p className="text-gray-300 text-sm mt-1">Entre em contato para resgatar seus prêmios.</p>
             </div>
-            <div className="p-3 bg-primary-100 rounded-lg">
-              <TicketIcon className="w-6 h-6 text-primary-600" />
-            </div>
+            <button className="btn-primary">Resgatar Prêmios</button>
           </div>
-        </div>
+        </motion.div>
+      )}
 
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Bilhetes Ativos</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {tickets.filter(t => t.raffle?.status === 'Active').length}
-              </p>
-            </div>
-            <div className="p-3 bg-success-100 rounded-lg">
-              <Clock className="w-6 h-6 text-success-600" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Bilhetes Premiados</p>
-              <p className="text-2xl font-bold text-secondary-600">
-                {tickets.filter(t => t.isWinner).length}
-              </p>
-            </div>
-            <div className="p-3 bg-secondary-100 rounded-lg">
-              <Trophy className="w-6 h-6 text-secondary-600" />
+      {/* Filters */}
+      <div className="card p-4">
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex-1">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Buscar por sorteio..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="input-modern w-full pl-10"
+              />
             </div>
           </div>
-        </div>
-
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Valor Investido</p>
-              <p className="text-2xl font-bold text-gray-900">
-                R$ {tickets.reduce((total, ticket) => total + (ticket.raffle?.ticketPrice || 0), 0).toFixed(2)}
-              </p>
-            </div>
-            <div className="p-3 bg-warning-100 rounded-lg">
-              <DollarSign className="w-6 h-6 text-warning-600" />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="bg-white rounded-lg border border-gray-200 p-4">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="relative max-w-xs">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Buscar bilhetes..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent w-full"
-            />
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Filter className="w-4 h-4 text-gray-400" />
-            <div className="flex rounded-lg border border-gray-300 overflow-hidden">
-              {[
-                { key: 'all', label: 'Todos' },
-                { key: 'active', label: 'Ativos' },
-                { key: 'finished', label: 'Finalizados' },
-                { key: 'winners', label: 'Premiados' }
-              ].map((filter) => (
-                <button
-                  key={filter.key}
-                  onClick={() => setActiveFilter(filter.key as FilterStatus)}
-                  className={`px-4 py-2 text-sm font-medium transition-colors ${
-                    activeFilter === filter.key
-                      ? 'bg-primary-600 text-white'
-                      : 'bg-white text-gray-700 hover:bg-gray-50'
-                  }`}
-                >
-                  {filter.label}
-                </button>
-              ))}
-            </div>
-          </div>
+          <select
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+            className="input-modern"
+          >
+            <option value="all">Todos os Status</option>
+            <option value="active">Ativos</option>
+            <option value="drawn">Sorteados</option>
+            <option value="won">Ganhos</option>
+            <option value="expired">Expirados</option>
+            <option value="cancelled">Cancelados</option>
+          </select>
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            className="input-modern"
+          >
+            <option value="recent">Mais Recentes</option>
+            <option value="oldest">Mais Antigos</option>
+            <option value="price_high">Maior Valor</option>
+            <option value="price_low">Menor Valor</option>
+          </select>
         </div>
       </div>
 
-      <div className="bg-white rounded-lg border border-gray-200">
-        {filteredTickets.length === 0 ? (
-          <div className="text-center py-12">
-            <TicketIcon className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-semibold text-gray-900">
-              {searchTerm || activeFilter !== 'all' ? 'Nenhum bilhete encontrado' : 'Nenhum bilhete ainda'}
-            </h3>
-            <p className="mt-1 text-sm text-gray-500">
-              {searchTerm || activeFilter !== 'all' 
+      {/* Tickets List */}
+      <div className="space-y-4">
+        {sortedTickets.length === 0 ? (
+          <div className="card p-12 text-center">
+            <div className="w-20 h-20 bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Ticket className="w-10 h-10 text-gray-500" />
+            </div>
+            <h3 className="text-xl font-semibold text-white mb-2">Nenhum bilhete encontrado</h3>
+            <p className="text-gray-400 mb-6">
+              {searchTerm || filter !== 'all'
                 ? 'Tente ajustar os filtros ou termo de busca'
-                : 'Você ainda não comprou nenhum bilhete de rifa.'
-              }
+                : 'Você ainda não comprou nenhum bilhete'}
             </p>
-            {!searchTerm && activeFilter === 'all' && (
-              <div className="mt-6">
-                <Link
-                  to="/"
-                  className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
-                >
-                  Ver Rifas Disponíveis
-                </Link>
-              </div>
+            {!searchTerm && filter === 'all' && (
+              <Link to="/raffles" className="btn-primary">
+                <Ticket className="w-5 h-5" />
+                Explorar Sorteios
+              </Link>
             )}
           </div>
         ) : (
-          <div className="overflow-hidden">
-            <div className="px-4 py-2 bg-gray-50 border-b border-gray-200">
-              <p className="text-sm text-gray-600">
-                {filteredTickets.length} bilhete{filteredTickets.length !== 1 ? 's' : ''} encontrado{filteredTickets.length !== 1 ? 's' : ''}
-              </p>
-            </div>
-            <div className="divide-y divide-gray-200">
-              {filteredTickets.map((ticket) => (
-                <div key={ticket.id} className="p-6 hover:bg-gray-50 transition-colors">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <div className="flex items-center gap-2">
-                          <div className="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center">
-                            <span className="text-primary-600 font-bold text-sm">
-                              {ticket.value.toString().padStart(4, '0')}
-                            </span>
-                          </div>
-                          <div>
-                            <h3 className="font-semibold text-gray-900">
-                              Bilhete #{ticket.value.toString().padStart(4, '0')}
-                            </h3>
-                            <p className="text-sm text-gray-500">
-                              ID: {ticket.id.substring(0, 8)}...
-                            </p>
-                          </div>
-                        </div>
-                        {getWinnerBadge(ticket)}
+          sortedTickets.map((ticket) => (
+            <motion.div
+              key={ticket.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="card overflow-hidden hover:shadow-xl transition-shadow"
+            >
+              <div className="flex flex-col lg:flex-row">
+                {/* Image */}
+                <div className="lg:w-48 h-48 lg:h-auto bg-gradient-to-br from-gray-700 to-gray-800 relative">
+                  <img
+                    src={ticket.raffleImage}
+                    alt={ticket.raffleTitle}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                    }}
+                  />
+                  <div className="absolute top-2 left-2">
+                    {getStatusBadge(ticket.status)}
+                  </div>
+                  {ticket.status === 'won' && (
+                    <div className="absolute inset-0 bg-green-500/20 flex items-center justify-center">
+                      <Trophy className="w-16 h-16 text-green-400 animate-pulse" />
+                    </div>
+                  )}
+                </div>
+
+                {/* Content */}
+                <div className="flex-1 p-6">
+                  <div className="flex items-start justify-between mb-4">
+                    <div>
+                      <h3 className="text-xl font-semibold text-white mb-1">{ticket.raffleTitle}</h3>
+                      <div className="flex items-center gap-4 text-sm text-gray-400">
+                        <span className="flex items-center gap-1">
+                          <Calendar className="w-4 h-4" />
+                          Compra: {new Date(ticket.purchaseDate).toLocaleDateString('pt-BR')}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Trophy className="w-4 h-4" />
+                          Sorteio: {new Date(ticket.drawDate).toLocaleDateString('pt-BR')}
+                        </span>
                       </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-2xl font-bold text-white">R$ {ticket.purchasePrice}</p>
+                      <p className="text-xs text-gray-400">{ticket.paymentMethod}</p>
+                    </div>
+                  </div>
 
-                      <div className="mb-3">
-                        <h4 className="font-medium text-gray-900 mb-1">
-                          {ticket.raffle?.title || 'Rifa não encontrada'}
-                        </h4>
-                        <div className="flex items-center gap-4 text-sm text-gray-600">
-                          <div className="flex items-center gap-1">
-                            <Calendar className="w-4 h-4" />
-                            <span>Comprado em: {formatDate(ticket.purchaseDate)}</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <DollarSign className="w-4 h-4" />
-                            <span>R$ {ticket.raffle?.ticketPrice?.toFixed(2) || '0,00'}</span>
-                          </div>
+                  {/* Numbers */}
+                  <div className="mb-4">
+                    <p className="text-sm text-gray-400 mb-2">Seus Números:</p>
+                    <div className="flex flex-wrap gap-2">
+                      {ticket.numbers.map((number) => (
+                        <div
+                          key={number}
+                          className={`w-12 h-12 rounded-lg flex items-center justify-center font-bold text-white ${
+                            ticket.status === 'won'
+                              ? 'bg-gradient-to-br from-green-500 to-green-600'
+                              : 'bg-gradient-to-br from-primary-500 to-primary-600'
+                          }`}
+                        >
+                          {number.toString().padStart(4, '0')}
                         </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Prize Info (if won) */}
+                  {ticket.status === 'won' && (
+                    <div className="mb-4 p-4 bg-green-500/10 border border-green-500/30 rounded-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Gift className="w-5 h-5 text-green-400" />
+                        <p className="font-semibold text-green-400">Prêmio Conquistado!</p>
                       </div>
+                      <p className="text-white">{ticket.prizeDescription}</p>
+                      <p className="text-2xl font-bold text-green-400 mt-2">
+                        R$ {ticket.prizeValue?.toLocaleString('pt-BR')}
+                      </p>
+                    </div>
+                  )}
 
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          {getStatusBadge(ticket.raffle)}
-                          {ticket.isWinner && (
-                            <Star className="w-4 h-4 text-secondary-500" />
-                          )}
-                        </div>
-
-                        {ticket.raffle && (
-                          <Link
-                            to={`/raffle/${ticket.raffleId}`}
-                            className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-primary-600 bg-primary-50 rounded-lg hover:bg-primary-100 transition-colors"
-                          >
-                            <Eye className="w-4 h-4" />
-                            Ver Rifa
-                          </Link>
-                        )}
-                      </div>
-
-                      {ticket.raffle?.status === 'Active' && ticket.raffle.maxParticipants && (
-                        <div className="mt-3 pt-3 border-t border-gray-100">
-                          <div className="flex justify-between text-xs text-gray-600 mb-1">
-                            <span>Progresso da rifa</span>
-                            <span>{calculateProgress(ticket.raffle).toFixed(0)}%</span>
-                          </div>
-                          <div className="w-full bg-gray-200 rounded-full h-2">
-                            <div 
-                              className="bg-gradient-to-r from-primary-500 to-primary-600 h-2 rounded-full transition-all duration-300"
-                              style={{ width: `${calculateProgress(ticket.raffle)}%` }}
-                            />
-                          </div>
-                        </div>
-                      )}
+                  {/* Transaction Info */}
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-4 text-gray-400">
+                      <span className="flex items-center gap-1">
+                        <Hash className="w-4 h-4" />
+                        ID: {ticket.transactionId}
+                      </span>
+                      <span>{ticket.numbers.length} número(s)</span>
+                    </div>
+                    <div className="flex gap-2">
+                      <button className="btn-secondary text-sm">
+                        <Download className="w-4 h-4" />
+                        Comprovante
+                      </button>
+                      <Link
+                        to={`/raffle/${ticket.raffleId}`}
+                        className="btn-secondary text-sm"
+                      >
+                        <Eye className="w-4 h-4" />
+                        Ver Sorteio
+                      </Link>
                     </div>
                   </div>
                 </div>
-              ))}
-            </div>
-          </div>
+              </div>
+            </motion.div>
+          ))
         )}
       </div>
     </div>
-  )
-}
+  );
+};
+
+export default MyTickets;

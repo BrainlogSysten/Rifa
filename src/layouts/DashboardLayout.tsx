@@ -1,226 +1,406 @@
-import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom'
-import { useState } from 'react'
+import React, { useState } from 'react';
+import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Menu,
-  X,
-  Home,
+  LayoutDashboard,
   Ticket,
   Plus,
-  User,
+  Wallet,
+  BarChart3,
+  FileText,
   Settings,
-  LogOut,
-  Trophy,
+  Bell,
   HelpCircle,
-  Receipt,
+  LogOut,
+  ChevronLeft,
+  ChevronRight,
+  Menu,
+  X,
+  Building2,
   Shield,
-} from 'lucide-react'
-import { useAuth } from '../contexts/AuthContext'
+  TrendingUp,
+  Users,
+  Calendar,
+  AlertTriangle,
+  CheckCircle
+} from 'lucide-react';
+import Logo from '../components/common/Logo';
 
-export default function DashboardLayout() {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
-  const { user, logout } = useAuth()
-  const navigate = useNavigate()
-  const location = useLocation()
+interface MenuItem {
+  id: string;
+  label: string;
+  icon: React.ReactNode;
+  path: string;
+  badge?: number | string;
+  badgeColor?: string;
+}
+
+const DashboardLayout: React.FC = () => {
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // Mock user data - replace with real data from context
+  const user = {
+    name: 'Empresa Exemplo LTDA',
+    cnpj: '12.345.678/0001-90',
+    avatar: null,
+    verificationStatus: 'verified' as 'verified' | 'pending' | 'rejected',
+    scpcStatus: 'active' as 'active' | 'pending' | 'expired',
+    scpcProtocol: 'SCPC/2024/001234',
+    loteriaFederalVinculo: '001/2024'
+  };
+
+  const menuItems: MenuItem[] = [
+    {
+      id: 'dashboard',
+      label: 'Dashboard',
+      icon: <LayoutDashboard className="w-5 h-5" />,
+      path: '/dashboard'
+    },
+    {
+      id: 'my-promotions',
+      label: 'Meus Sorteios',
+      icon: <Ticket className="w-5 h-5" />,
+      path: '/dashboard/my-promotions',
+      badge: '3',
+      badgeColor: 'bg-blue-500'
+    },
+    {
+      id: 'create',
+      label: 'Criar Sorteio',
+      icon: <Plus className="w-5 h-5" />,
+      path: '/dashboard/create-promotion'
+    },
+    {
+      id: 'my-tickets',
+      label: 'Meus Bilhetes',
+      icon: <Ticket className="w-5 h-5" />,
+      path: '/dashboard/my-tickets',
+      badge: '12'
+    },
+    {
+      id: 'wallet',
+      label: 'Carteira',
+      icon: <Wallet className="w-5 h-5" />,
+      path: '/dashboard/wallet',
+      badge: 'R$ 1.2k',
+      badgeColor: 'bg-green-500'
+    },
+    {
+      id: 'analytics',
+      label: 'Análise',
+      icon: <BarChart3 className="w-5 h-5" />,
+      path: '/dashboard/analytics'
+    },
+    {
+      id: 'compliance',
+      label: 'SCPC/SECAP',
+      icon: <Shield className="w-5 h-5" />,
+      path: '/dashboard/compliance',
+      badge: '!',
+      badgeColor: 'bg-yellow-500'
+    },
+    {
+      id: 'settings',
+      label: 'Configurações',
+      icon: <Settings className="w-5 h-5" />,
+      path: '/dashboard/settings'
+    }
+  ];
+
+  const bottomMenuItems: MenuItem[] = [
+    {
+      id: 'notifications',
+      label: 'Notificações',
+      icon: <Bell className="w-5 h-5" />,
+      path: '/dashboard/notifications',
+      badge: '5',
+      badgeColor: 'bg-red-500'
+    },
+    {
+      id: 'support',
+      label: 'Suporte',
+      icon: <HelpCircle className="w-5 h-5" />,
+      path: '/dashboard/support'
+    }
+  ];
 
   const handleLogout = () => {
-    logout()
-    navigate('/login')
-  }
+    // Implement logout logic
+    navigate('/login');
+  };
 
-  const menuItems = [
-    { path: '/dashboard', label: 'Início', icon: Home },
-    { path: '/dashboard/raffles', label: 'Minhas Rifas', icon: Trophy },
-    { path: '/dashboard/tickets', label: 'Meus Bilhetes', icon: Receipt },
-    { path: '/dashboard/raffles/create', label: 'Criar Rifa', icon: Plus, highlight: true },
-    { path: '/dashboard/profile', label: 'Meu Perfil', icon: User },
-    { path: '/dashboard/help', label: 'Ajuda', icon: HelpCircle },
-  ]
-
-  const isActive = (path: string) => location.pathname === path
+  const isActive = (path: string) => location.pathname === path;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <aside className="hidden md:fixed md:inset-y-0 md:flex md:w-64 md:flex-col bg-white border-r">
-        <div className="flex items-center justify-center h-16 px-4 border-b">
-          <Link to="/" className="flex items-center space-x-2">
-            <Ticket className="h-8 w-8 text-purple-600" />
-            <span className="font-bold text-xl text-gray-900">
-              RIFAMODERNA
-            </span>
-          </Link>
-        </div>
-
-        <div className="px-4 py-6 border-b">
-          <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center">
-              <span className="text-purple-600 font-bold text-lg">
-                {user?.name?.charAt(0).toUpperCase() || 'U'}
-              </span>
-            </div>
-            <div className="flex-1">
-              <p className="font-medium text-gray-900">
-                {user?.name || 'Usuário'}
-              </p>
-              <p className="text-sm text-gray-500">{user?.email || 'email@example.com'}</p>
-            </div>
-          </div>
-        </div>
-
-        <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
-          {menuItems.map((item) => (
-            <Link
-              key={item.path}
-              to={item.path}
-              className={`flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
-                isActive(item.path)
-                  ? 'bg-purple-50 text-purple-600'
-                  : item.highlight
-                  ? 'bg-purple-600 text-white hover:bg-purple-700'
-                  : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
-              }`}
-            >
-              <item.icon className="mr-3 h-5 w-5" />
-              {item.label}
-            </Link>
-          ))}
-          
-          {user?.isAdmin && (
-            <>
-              <div className="my-4 border-t border-gray-200" />
-              <Link
-                to="/dashboard/admin"
-                className={`flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
-                  location.pathname.startsWith('/dashboard/admin')
-                    ? 'bg-red-50 text-red-600'
-                    : 'text-gray-700 hover:bg-red-50 hover:text-red-600'
-                }`}
-              >
-                <Shield className="mr-3 h-5 w-5" />
-                Painel Admin
-              </Link>
-            </>
-          )}
-        </nav>
-
-        <div className="p-4 border-t">
+    <div className="min-h-screen bg-gradient-to-br from-surface-900 via-surface-800 to-surface-900">
+      {/* Mobile Header */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-surface-800/95 backdrop-blur-xl border-b border-white/10">
+        <div className="flex items-center justify-between p-4">
           <button
-            onClick={handleLogout}
-            className="flex items-center w-full px-4 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+            onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
+            className="p-2 hover:bg-white/10 rounded-lg transition-colors"
           >
-            <LogOut className="mr-3 h-5 w-5" />
-            Sair
+            {isMobileSidebarOpen ? (
+              <X className="w-6 h-6 text-white" />
+            ) : (
+              <Menu className="w-6 h-6 text-white" />
+            )}
           </button>
-        </div>
-      </aside>
-
-      <div className="md:hidden sticky top-0 z-40 bg-white border-b">
-        <div className="flex items-center justify-between px-4 py-3">
-          <button
-            onClick={() => setIsSidebarOpen(true)}
-            className="text-gray-700 hover:text-gray-900"
-          >
-            <Menu className="h-6 w-6" />
-          </button>
-          <Link to="/" className="flex items-center space-x-2">
-            <Ticket className="h-6 w-6 text-purple-600" />
-            <span className="font-bold text-lg text-gray-900">
-              RIFAMODERNA
-            </span>
-          </Link>
-          <Link to="/dashboard/profile">
-            <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center">
-              <span className="text-purple-600 font-bold text-sm">
-                {user?.name?.charAt(0).toUpperCase() || 'U'}
-              </span>
-            </div>
-          </Link>
+          <Logo size="small" />
+          <div className="w-10" /> {/* Spacer for alignment */}
         </div>
       </div>
 
-      {isSidebarOpen && (
-        <div className="fixed inset-0 z-50 md:hidden">
-          <div className="fixed inset-0 bg-black/30" onClick={() => setIsSidebarOpen(false)} />
-          <aside className="fixed inset-y-0 left-0 w-64 bg-white shadow-xl">
-            <div className="flex items-center justify-between p-4 border-b">
-              <span className="font-bold text-lg text-gray-900">Menu</span>
-              <button
-                onClick={() => setIsSidebarOpen(false)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                <X className="h-6 w-6" />
-              </button>
-            </div>
+      <div className="flex h-screen pt-16 lg:pt-0">
+        {/* Desktop Sidebar */}
+        <motion.aside
+          initial={false}
+          animate={{ width: isSidebarCollapsed ? 80 : 280 }}
+          className={`hidden lg:flex flex-col bg-surface-800/50 backdrop-blur-xl border-r border-white/10 relative`}
+        >
+          {/* Logo Section */}
+          <div className="p-6 border-b border-white/10">
+            {isSidebarCollapsed ? (
+              <Logo size="small" showText={false} />
+            ) : (
+              <Logo size="medium" />
+            )}
+          </div>
 
-            <div className="px-4 py-6 border-b">
-              <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center">
-                  <span className="text-purple-600 font-bold text-lg">
-                    {user?.name?.charAt(0).toUpperCase() || 'U'}
-                  </span>
+          {/* User Info */}
+          {!isSidebarCollapsed && (
+            <div className="p-6 border-b border-white/10">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-12 h-12 bg-gradient-to-br from-secondary-400 to-primary-600 rounded-xl flex items-center justify-center">
+                  <Building2 className="w-6 h-6 text-white" />
                 </div>
                 <div className="flex-1">
-                  <p className="font-medium text-gray-900">
-                    {user?.name || 'Usuário'}
-                  </p>
-                  <p className="text-sm text-gray-500">{user?.email || 'email@example.com'}</p>
+                  <p className="text-white font-semibold text-sm">{user.name}</p>
+                  <p className="text-gray-400 text-xs">CNPJ: {user.cnpj}</p>
                 </div>
               </div>
-            </div>
 
-            <nav className="px-4 py-4 space-y-1">
+              {/* Status Badges */}
+              <div className="flex gap-2">
+                {user.verificationStatus === 'verified' ? (
+                  <span className="flex items-center gap-1 px-2 py-1 bg-green-500/20 text-green-400 rounded-full text-xs">
+                    <CheckCircle className="w-3 h-3" />
+                    Verificado
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-1 px-2 py-1 bg-yellow-500/20 text-yellow-400 rounded-full text-xs">
+                    <AlertTriangle className="w-3 h-3" />
+                    Pendente
+                  </span>
+                )}
+                {user.scpcStatus === 'active' ? (
+                  <span className="flex items-center gap-1 px-2 py-1 bg-blue-500/20 text-blue-400 rounded-full text-xs">
+                    <Shield className="w-3 h-3" />
+                    SCPC Ativo
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-1 px-2 py-1 bg-red-500/20 text-red-400 rounded-full text-xs">
+                    <AlertTriangle className="w-3 h-3" />
+                    SCPC Expirado
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Menu Items */}
+          <nav className="flex-1 p-4 overflow-y-auto">
+            <ul className="space-y-1">
               {menuItems.map((item) => (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  onClick={() => setIsSidebarOpen(false)}
-                  className={`flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
-                    isActive(item.path)
-                      ? 'bg-purple-50 text-purple-600'
-                      : item.highlight
-                      ? 'bg-purple-600 text-white hover:bg-purple-700'
-                      : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
-                  }`}
-                >
-                  <item.icon className="mr-3 h-5 w-5" />
-                  {item.label}
-                </Link>
-              ))}
-              
-              {user?.isAdmin && (
-                <>
-                  <div className="my-4 border-t border-gray-200" />
+                <li key={item.id}>
                   <Link
-                    to="/dashboard/admin"
-                    onClick={() => setIsSidebarOpen(false)}
-                    className={`flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
-                      location.pathname.startsWith('/dashboard/admin')
-                        ? 'bg-red-50 text-red-600'
-                        : 'text-gray-700 hover:bg-red-50 hover:text-red-600'
+                    to={item.path}
+                    className={`flex items-center gap-3 px-3 py-3 rounded-lg transition-all ${
+                      isActive(item.path)
+                        ? 'bg-primary-500/20 text-primary-400'
+                        : 'text-gray-400 hover:text-white hover:bg-white/5'
                     }`}
                   >
-                    <Shield className="mr-3 h-5 w-5" />
-                    Painel Admin
+                    {item.icon}
+                    {!isSidebarCollapsed && (
+                      <>
+                        <span className="flex-1">{item.label}</span>
+                        {item.badge && (
+                          <span className={`px-2 py-1 text-xs rounded-full ${item.badgeColor || 'bg-gray-600'} text-white`}>
+                            {item.badge}
+                          </span>
+                        )}
+                      </>
+                    )}
                   </Link>
-                </>
-              )}
-            </nav>
-            
-            <div className="absolute bottom-0 left-0 right-0 p-4 border-t">
-              <button
-                onClick={handleLogout}
-                className="flex items-center w-full px-4 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                <LogOut className="mr-3 h-5 w-5" />
-                Sair
-              </button>
-            </div>
-          </aside>
-        </div>
-      )}
+                </li>
+              ))}
+            </ul>
+          </nav>
 
-      <div className="md:pl-64">
-        <Outlet />
+          {/* Bottom Menu */}
+          <div className="p-4 border-t border-white/10">
+            <ul className="space-y-1">
+              {bottomMenuItems.map((item) => (
+                <li key={item.id}>
+                  <Link
+                    to={item.path}
+                    className={`flex items-center gap-3 px-3 py-3 rounded-lg transition-all ${
+                      isActive(item.path)
+                        ? 'bg-primary-500/20 text-primary-400'
+                        : 'text-gray-400 hover:text-white hover:bg-white/5'
+                    }`}
+                  >
+                    {item.icon}
+                    {!isSidebarCollapsed && (
+                      <>
+                        <span className="flex-1">{item.label}</span>
+                        {item.badge && (
+                          <span className={`px-2 py-1 text-xs rounded-full ${item.badgeColor || 'bg-gray-600'} text-white`}>
+                            {item.badge}
+                          </span>
+                        )}
+                      </>
+                    )}
+                  </Link>
+                </li>
+              ))}
+              <li>
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center gap-3 px-3 py-3 rounded-lg text-red-400 hover:bg-red-500/10 transition-all w-full"
+                >
+                  <LogOut className="w-5 h-5" />
+                  {!isSidebarCollapsed && <span>Sair</span>}
+                </button>
+              </li>
+            </ul>
+          </div>
+
+          {/* Collapse Button */}
+          <button
+            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+            className="absolute top-1/2 -right-4 transform -translate-y-1/2 w-8 h-8 bg-surface-700 border border-white/10 rounded-full flex items-center justify-center text-gray-400 hover:text-white transition-colors"
+          >
+            {isSidebarCollapsed ? (
+              <ChevronRight className="w-4 h-4" />
+            ) : (
+              <ChevronLeft className="w-4 h-4" />
+            )}
+          </button>
+        </motion.aside>
+
+        {/* Mobile Sidebar */}
+        <AnimatePresence>
+          {isMobileSidebarOpen && (
+            <>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setIsMobileSidebarOpen(false)}
+                className="lg:hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
+              />
+              <motion.aside
+                initial={{ x: '-100%' }}
+                animate={{ x: 0 }}
+                exit={{ x: '-100%' }}
+                className="lg:hidden fixed left-0 top-0 bottom-0 w-80 bg-surface-800 z-50 flex flex-col"
+              >
+                {/* Mobile sidebar content - similar to desktop */}
+                <div className="p-6 border-b border-white/10">
+                  <Logo size="medium" />
+                </div>
+
+                <div className="p-6 border-b border-white/10">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-12 h-12 bg-gradient-to-br from-secondary-400 to-primary-600 rounded-xl flex items-center justify-center">
+                      <Building2 className="w-6 h-6 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-white font-semibold text-sm">{user.name}</p>
+                      <p className="text-gray-400 text-xs">CNPJ: {user.cnpj}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <nav className="flex-1 p-4 overflow-y-auto">
+                  <ul className="space-y-1">
+                    {menuItems.map((item) => (
+                      <li key={item.id}>
+                        <Link
+                          to={item.path}
+                          onClick={() => setIsMobileSidebarOpen(false)}
+                          className={`flex items-center gap-3 px-3 py-3 rounded-lg transition-all ${
+                            isActive(item.path)
+                              ? 'bg-primary-500/20 text-primary-400'
+                              : 'text-gray-400 hover:text-white hover:bg-white/5'
+                          }`}
+                        >
+                          {item.icon}
+                          <span className="flex-1">{item.label}</span>
+                          {item.badge && (
+                            <span className={`px-2 py-1 text-xs rounded-full ${item.badgeColor || 'bg-gray-600'} text-white`}>
+                              {item.badge}
+                            </span>
+                          )}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </nav>
+
+                <div className="p-4 border-t border-white/10">
+                  <ul className="space-y-1">
+                    {bottomMenuItems.map((item) => (
+                      <li key={item.id}>
+                        <Link
+                          to={item.path}
+                          onClick={() => setIsMobileSidebarOpen(false)}
+                          className={`flex items-center gap-3 px-3 py-3 rounded-lg transition-all ${
+                            isActive(item.path)
+                              ? 'bg-primary-500/20 text-primary-400'
+                              : 'text-gray-400 hover:text-white hover:bg-white/5'
+                          }`}
+                        >
+                          {item.icon}
+                          <span className="flex-1">{item.label}</span>
+                          {item.badge && (
+                            <span className={`px-2 py-1 text-xs rounded-full ${item.badgeColor || 'bg-gray-600'} text-white`}>
+                              {item.badge}
+                            </span>
+                          )}
+                        </Link>
+                      </li>
+                    ))}
+                    <li>
+                      <button
+                        onClick={handleLogout}
+                        className="flex items-center gap-3 px-3 py-3 rounded-lg text-red-400 hover:bg-red-500/10 transition-all w-full"
+                      >
+                        <LogOut className="w-5 h-5" />
+                        <span>Sair</span>
+                      </button>
+                    </li>
+                  </ul>
+                </div>
+              </motion.aside>
+            </>
+          )}
+        </AnimatePresence>
+
+        {/* Main Content */}
+        <main className="flex-1 overflow-x-hidden overflow-y-auto">
+          <div className="container mx-auto px-6 py-8">
+            <Outlet />
+          </div>
+        </main>
       </div>
     </div>
-  )
-}
+  );
+};
+
+export default DashboardLayout;

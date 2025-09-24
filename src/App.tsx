@@ -1,73 +1,83 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
-import { useEffect } from 'react'
-import { AuthProvider } from './contexts/AuthContext'
-import ErrorBoundary from './components/ErrorBoundary'
-import PrivateRoute from './components/PrivateRoute'
-import AdminRoute from './components/AdminRoute'
-import PublicLayout from './layouts/PublicLayout'
-import DashboardLayout from './layouts/DashboardLayout'
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { AuthProvider } from './contexts/AuthContext';
+import './index.css';
 
-import HomePage from './pages/Home'
-import LoginPage from './pages/Login'
-import RegisterPage from './pages/Register'
-import RaffleDetailsPage from './pages/public/RaffleDetailsPage'
-import PublicRaffles from './pages/public/PublicRaffles'
+import Header from './components/common/Header';
+import Footer from './components/common/Footer';
+import ProtectedRoute from './components/auth/ProtectedRoute';
+import HomePage from './pages/HomePage';
+import RafflesPage from './pages/RafflesPage';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
+import LegalTermsPage from './pages/LegalTermsPage';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import Dashboard from './pages/Dashboard';
+import DashboardLayout from './layouts/DashboardLayout';
+import DashboardHome from './pages/dashboard/DashboardHome';
+import MyPromotions from './pages/dashboard/MyPromotions';
+import MyTickets from './pages/dashboard/MyTickets';
+import Wallet from './pages/dashboard/Wallet';
+import DashboardSettings from './pages/dashboard/DashboardSettings';
+import Compliance from './pages/dashboard/Compliance';
+import CreatePromotion from './pages/dashboard/CreatePromotion';
+import Analytics from './pages/dashboard/Analytics';
+import Notifications from './pages/dashboard/Notifications';
+import Support from './pages/dashboard/Support';
+import HowItWorksPage from './pages/HowItWorksPage';
+import WinnersPage from './pages/WinnersPage';
+import CategoryPage from './pages/CategoryPage';
+import RaffleDetailsPage from './pages/RaffleDetailsPage';
 
-import Dashboard from './pages/dashboard/Dashboard'
-import MyRaffles from './pages/dashboard/MyRaffles'
-import MyTickets from './pages/dashboard/MyTickets'
-import CreateRaffleSimple from './pages/dashboard/CreateRaffleSimple'
-import EditRaffle from './pages/dashboard/EditRaffle'
-import Profile from './pages/dashboard/Profile'
-import Settings from './pages/dashboard/Settings'
-
-import AdminDashboard from './pages/dashboard/admin/AdminDashboard'
-import PrizeManagement from './pages/dashboard/admin/PrizeManagement'
-import UserManagement from './pages/dashboard/admin/UserManagement'
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: 1,
+      staleTime: 5 * 60 * 1000,
+    },
+  },
+});
 
 function App() {
-  useEffect(() => {
-    document.documentElement.style.scrollBehavior = 'smooth'
-  }, [])
-
   return (
-    <ErrorBoundary>
+    <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <Routes>
-        <Route path="/" element={<PublicLayout />}>
-          <Route index element={<HomePage />} />
-          <Route path="rifas" element={<PublicRaffles />} />
-          <Route path="login" element={<LoginPage />} />
-          <Route path="register" element={<RegisterPage />} />
-          <Route path="raffle/:id" element={<RaffleDetailsPage />} />
-        </Route>
-
-        <Route
-          path="/dashboard"
-          element={
-            <PrivateRoute>
-              <DashboardLayout />
-            </PrivateRoute>
-          }
-        >
-          <Route index element={<Dashboard />} />
-          <Route path="raffles" element={<MyRaffles />} />
-          <Route path="tickets" element={<MyTickets />} />
-          <Route path="raffles/create" element={<CreateRaffleSimple />} />
-          <Route path="raffles/:id/edit" element={<EditRaffle />} />
-          <Route path="profile" element={<Profile />} />
-          <Route path="settings" element={<Settings />} />
-          
-          <Route path="admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
-          <Route path="admin/users" element={<AdminRoute><UserManagement /></AdminRoute>} />
-          <Route path="admin/prizes" element={<AdminRoute><PrizeManagement /></AdminRoute>} />
-        </Route>
-
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </AuthProvider>
-    </ErrorBoundary>
-  )
+        <Router>
+          <Header />
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/raffles" element={<RafflesPage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/legal-terms" element={<LegalTermsPage />} />
+            <Route path="/admin" element={<AdminDashboard />} />
+            {/* Dashboard Routes - Protected */}
+            <Route path="/dashboard" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
+              <Route index element={<DashboardHome />} />
+              <Route path="my-promotions" element={<MyPromotions />} />
+              <Route path="my-tickets" element={<MyTickets />} />
+              <Route path="create-promotion" element={<CreatePromotion />} />
+              <Route path="wallet" element={<Wallet />} />
+              <Route path="analytics" element={<Analytics />} />
+              <Route path="compliance" element={<Compliance />} />
+              <Route path="settings" element={<DashboardSettings />} />
+              <Route path="notifications" element={<Notifications />} />
+              <Route path="support" element={<Support />} />
+            </Route>
+            {/* Legacy Dashboard */}
+            <Route path="/dashboard-old" element={<Dashboard />} />
+            <Route path="/how-it-works" element={<HowItWorksPage />} />
+            <Route path="/winners" element={<WinnersPage />} />
+            <Route path="/category/:category" element={<CategoryPage />} />
+            <Route path="/raffle/:id" element={<RaffleDetailsPage />} />
+          </Routes>
+          <Footer />
+        </Router>
+      </AuthProvider>
+    </QueryClientProvider>
+  );
 }
 
-export default App
+export default App;
