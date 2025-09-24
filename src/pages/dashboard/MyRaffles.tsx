@@ -16,9 +16,15 @@ export default function MyRaffles() {
 
   const loadRaffles = async () => {
     try {
+      console.log('Loading raffles...')
+      console.log('Token:', localStorage.getItem('token'))
       const data = await raffleService.getAll()
-      setRaffles(data)
+      console.log('Raffles loaded:', data)
+      console.log('Raffles length:', data?.length)
+      setRaffles(data || [])
     } catch (error) {
+      console.error('Error loading raffles:', error)
+      console.error('Error details:', error.response?.data)
       toast.error('Erro ao carregar rifas')
     } finally {
       setIsLoading(false)
@@ -52,14 +58,22 @@ export default function MyRaffles() {
     }
   }
 
-  const filteredRaffles = raffles.filter(raffle => {
-    const matchesSearch = raffle.title.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesStatus = statusFilter === 'all' || raffle.status === statusFilter
-    return matchesSearch && matchesStatus
-  })
+  const getStatusString = (status: string | number): string => {
+    if (typeof status === 'number') {
+      switch (status) {
+        case 0: return 'Draft'
+        case 1: return 'Active' 
+        case 2: return 'Finished'
+        case 3: return 'Cancelled'
+        default: return 'Draft'
+      }
+    }
+    return status
+  }
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
+  const getStatusColor = (status: string | number) => {
+    const statusStr = getStatusString(status)
+    switch (statusStr) {
       case 'Active': return 'bg-success-100 text-success-700'
       case 'Draft': return 'bg-gray-100 text-gray-700'
       case 'Finished': return 'bg-primary-100 text-primary-700'
@@ -68,15 +82,27 @@ export default function MyRaffles() {
     }
   }
 
-  const getStatusLabel = (status: string) => {
-    switch (status) {
+  const getStatusLabel = (status: string | number) => {
+    const statusStr = getStatusString(status)
+    switch (statusStr) {
       case 'Active': return 'Ativa'
       case 'Draft': return 'Rascunho'
       case 'Finished': return 'Finalizada'
       case 'Cancelled': return 'Cancelada'
-      default: return status
+      default: return statusStr
     }
   }
+
+  const filteredRaffles = raffles.filter(raffle => {
+    const matchesSearch = raffle.title.toLowerCase().includes(searchTerm.toLowerCase())
+    const raffleStatusStr = getStatusString(raffle.status)
+    const matchesStatus = statusFilter === 'all' || raffleStatusStr === statusFilter
+    return matchesSearch && matchesStatus
+  })
+
+  console.log('Raffles state:', raffles)
+  console.log('Filtered raffles:', filteredRaffles)
+  console.log('Is loading:', isLoading)
 
   if (isLoading) {
     return (
@@ -94,7 +120,7 @@ export default function MyRaffles() {
           <p className="text-gray-600 mt-2">Gerencie suas rifas e acompanhe o desempenho</p>
         </div>
         <Link
-          to="/dashboard/raffles/create"
+          to="/dashboard/admin/raffles/create"
           className="mt-4 sm:mt-0 btn btn-primary btn-lg"
         >
           <Plus className="w-5 h-5 mr-2" />
@@ -145,7 +171,7 @@ export default function MyRaffles() {
           </p>
           {!searchTerm && statusFilter === 'all' && (
             <Link
-              to="/dashboard/raffles/create"
+              to="/dashboard/admin/raffles/create"
               className="btn btn-primary btn-md"
             >
               <Plus className="w-5 h-5 mr-2" />
@@ -159,7 +185,27 @@ export default function MyRaffles() {
             <div key={raffle.id} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow">
               <div className="h-48 bg-gradient-to-br from-primary-500 to-primary-600 relative">
                 {raffle.images?.[0] ? (
-                  <img src={raffle.images[0]} alt={raffle.title} className="w-full h-full object-cover" />
+                  <img 
+                    src={
+                      raffle.images[0].startsWith('http') 
+                        ? raffle.images[0] 
+                        : `http://localhost:5044${raffle.images[0]}`
+                    } 
+                    alt={raffle.title} 
+                    className="w-full h-full object-cover" 
+                  />
+                ) : raffle.coverImageUrl ? (
+                  <img 
+                    src={raffle.coverImageUrl} 
+                    alt={raffle.title} 
+                    className="w-full h-full object-cover" 
+                  />
+                ) : raffle.imageBanner ? (
+                  <img 
+                    src={raffle.imageBanner} 
+                    alt={raffle.title} 
+                    className="w-full h-full object-cover" 
+                  />
                 ) : (
                   <div className="flex items-center justify-center h-full">
                     <Calendar className="w-12 h-12 text-white/50" />
@@ -204,7 +250,7 @@ export default function MyRaffles() {
                     <Eye className="w-4 h-4" />
                   </Link>
                   <Link
-                    to={`/dashboard/raffles/${raffle.id}/edit`}
+                    to={`/dashboard/admin/raffles/${raffle.id}/edit`}
                     className="flex-1 btn btn-sm btn-ghost justify-center"
                   >
                     <Edit2 className="w-4 h-4" />

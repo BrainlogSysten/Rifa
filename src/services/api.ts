@@ -79,16 +79,27 @@ export interface Raffle {
   id: string;
   title: string;
   description: string;
-  type: string;
+  type: string | number;
   images: string[];
+  imageBanner?: string;
   startDate: string;
   endDate: string;
   terms: string;
   ticketPrice: number;
   maxTicketPerUser: number;
   maxParticipants: number;
-  paymentMethod: string;
-  status: 'Draft' | 'Active' | 'Finished' | 'Cancelled';
+  paymentMethod: string | number;
+  status: 'Draft' | 'Active' | 'Finished' | 'Cancelled' | number;
+  coverImageUrl?: string;
+  ticketsSold?: number;
+  uniqueLink?: string;
+  numberOfTickets?: number;
+  themeId?: string;
+  themeConfig?: string; // JSON string with theme configuration
+  isEnable?: boolean;
+  isEnabled?: boolean;
+  createdAt?: string;
+  updatedAt?: string | null;
 }
 
 export interface Prize {
@@ -137,24 +148,30 @@ export const authService = {
       localStorage.setItem('token', token);
       
       const decoded = decodeToken(token);
+      console.log('Decoded JWT token:', decoded);
       if (decoded) {
+        const roleFromToken = decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] === 'Admin';
+        console.log('Role from token:', roleFromToken);
+        
         const user = {
           id: decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'] || '',
           email: decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'] || email,
           name: email.split('@')[0],
-          isAdmin: decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] === 'Admin' || false,
+          isAdmin: roleFromToken,
           isEnabled: true
         };
+        console.log('Initial user from token:', user);
         localStorage.setItem('user', JSON.stringify(user));
         
         try {
           const userDetails = await userService.getById(user.id);
+          console.log('User details from API:', userDetails);
           if (userDetails) {
               const fullUser = {
               ...userDetails,
               isAdmin: userDetails.isAdmin !== undefined ? userDetails.isAdmin : user.isAdmin
             };
-            console.log('User details:', fullUser);
+            console.log('Final user object:', fullUser);
             localStorage.setItem('user', JSON.stringify(fullUser));
             return { token, user: fullUser };
           }

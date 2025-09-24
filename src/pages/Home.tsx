@@ -11,10 +11,13 @@ import {
   Users,
   Check,
   Youtube,
-  Ticket
+  Ticket,
+  LayoutDashboard
 } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
 const Home: React.FC = () => {
+  const { user, isAuthenticated } = useAuth();
   return (
     <div className="min-h-screen">
       <section className="bg-gradient-purple text-white">
@@ -34,12 +37,26 @@ const Home: React.FC = () => {
               </div>
               
               <div className="flex items-center gap-4">
-                <Link to="/login" className="text-white hover:text-secondary-400 font-medium">
-                  Entrar
-                </Link>
-                <Link to="/register" className="btn btn-secondary btn-sm">
-                  Cadastrar
-                </Link>
+                {isAuthenticated ? (
+                  <>
+                    <span className="text-white/80 text-sm">
+                      Olá, {user?.name?.split(' ')[0]}!
+                    </span>
+                    <Link to="/dashboard" className="btn btn-secondary btn-sm flex items-center gap-2">
+                      <LayoutDashboard className="w-4 h-4" />
+                      Dashboard
+                    </Link>
+                  </>
+                ) : (
+                  <>
+                    <Link to="/login" className="text-white hover:text-secondary-400 font-medium">
+                      Entrar
+                    </Link>
+                    <Link to="/register" className="btn btn-secondary btn-sm">
+                      Cadastrar
+                    </Link>
+                  </>
+                )}
               </div>
             </nav>
           </div>
@@ -50,13 +67,13 @@ const Home: React.FC = () => {
             <div className="animate-fadeIn">
               <h1 className="text-4xl md:text-6xl font-black mb-6 leading-tight">
                 Sistema Completo<br />
-                para <span className="text-secondary-400">Criar Rifas</span><br />
-                Online!
+                de <span className="text-secondary-400">Rifas Online</span><br />
+                Seguro!
               </h1>
-              
+
               <p className="text-lg text-white/80 mb-8 max-w-lg">
-                Crie e gerencie suas rifas de forma simples e segura. 
-                Sistema completo com sorteio automático, pagamento via PIX 
+                Participe de rifas incríveis de forma simples e segura.
+                Sistema completo com sorteio automático, pagamento via PIX
                 e entrega garantida dos prêmios.
               </p>
               
@@ -66,7 +83,7 @@ const Home: React.FC = () => {
                   <ArrowRight className="w-5 h-5 ml-2" />
                 </Link>
                 <Link to="/register" className="btn btn-outline btn-lg">
-                  Criar Minha Rifa
+                  Participar das Rifas
                 </Link>
               </div>
               

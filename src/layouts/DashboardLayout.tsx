@@ -15,6 +15,7 @@ import {
   Shield,
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
+import SYSTEM_CONFIG from '../config/systemConfig'
 
 export default function DashboardLayout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
@@ -27,14 +28,31 @@ export default function DashboardLayout() {
     navigate('/login')
   }
 
-  const menuItems = [
-    { path: '/dashboard', label: 'Início', icon: Home },
-    { path: '/dashboard/raffles', label: 'Minhas Rifas', icon: Trophy },
-    { path: '/dashboard/tickets', label: 'Meus Bilhetes', icon: Receipt },
-    { path: '/dashboard/raffles/create', label: 'Criar Rifa', icon: Plus, highlight: true },
-    { path: '/dashboard/profile', label: 'Meu Perfil', icon: User },
-    { path: '/dashboard/help', label: 'Ajuda', icon: HelpCircle },
-  ]
+  const getMenuItems = () => {
+    const baseItems = [
+      { path: '/dashboard', label: 'Início', icon: Home },
+      { path: '/dashboard/profile', label: 'Meu Perfil', icon: User },
+    ]
+
+    // No modo cliente, usuários normais só veem bilhetes
+    if (SYSTEM_CONFIG.mode === 'client' && !user?.isAdmin) {
+      return [
+        ...baseItems,
+        { path: '/dashboard/tickets', label: 'Meus Bilhetes', icon: Receipt },
+        { path: '/rifas', label: 'Rifas Disponíveis', icon: Trophy },
+      ]
+    }
+
+    // Admin ou modo plataforma - menu completo
+    return [
+      ...baseItems,
+      { path: '/dashboard/raffles', label: 'Minhas Rifas', icon: Trophy },
+      { path: '/dashboard/tickets', label: 'Meus Bilhetes', icon: Receipt },
+      { path: '/dashboard/raffles/create', label: 'Criar Rifa', icon: Plus, highlight: true },
+    ]
+  }
+
+  const menuItems = getMenuItems()
 
   const isActive = (path: string) => location.pathname === path
 

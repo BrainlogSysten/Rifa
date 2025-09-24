@@ -12,6 +12,7 @@ import LoginPage from './pages/Login'
 import RegisterPage from './pages/Register'
 import RaffleDetailsPage from './pages/public/RaffleDetailsPage'
 import PublicRaffles from './pages/public/PublicRaffles'
+import PublicRafflePageThemed from './modules/client-system/pages/PublicRafflePageThemed'
 
 import Dashboard from './pages/dashboard/Dashboard'
 import MyRaffles from './pages/dashboard/MyRaffles'
@@ -42,6 +43,8 @@ function App() {
           <Route path="raffle/:id" element={<RaffleDetailsPage />} />
         </Route>
 
+        <Route path="/r/:uniqueLink" element={<PublicRafflePageThemed />} />
+
         <Route
           path="/dashboard"
           element={
@@ -53,14 +56,14 @@ function App() {
           <Route index element={<Dashboard />} />
           <Route path="raffles" element={<MyRaffles />} />
           <Route path="tickets" element={<MyTickets />} />
-          <Route path="raffles/create" element={<CreateRaffleSimple />} />
-          <Route path="raffles/:id/edit" element={<EditRaffle />} />
           <Route path="profile" element={<Profile />} />
           <Route path="settings" element={<Settings />} />
-          
+
           <Route path="admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
           <Route path="admin/users" element={<AdminRoute><UserManagement /></AdminRoute>} />
           <Route path="admin/prizes" element={<AdminRoute><PrizeManagement /></AdminRoute>} />
+          <Route path="admin/raffles/create" element={<AdminRoute><CreateRaffleSimple /></AdminRoute>} />
+          <Route path="admin/raffles/:id/edit" element={<AdminRoute><EditRaffle /></AdminRoute>} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />

@@ -36,6 +36,30 @@ export default function RaffleDetailsPage() {
   const [purchasedTickets, setPurchasedTickets] = useState<number[]>([])
   const [isPurchasing, setIsPurchasing] = useState(false)
   const [showTicketGrid, setShowTicketGrid] = useState(false)
+  const [theme, setTheme] = useState<any>({
+    primaryColor: '#6366F1',
+    secondaryColor: '#8B5CF6',
+    accentColor: '#EC4899',
+    backgroundColor: '#FFFFFF',
+    textColor: '#1F2937',
+    gradientEnabled: false,
+    gradientType: 'linear',
+    gradientAngle: 45,
+    gradientColors: ['#6366F1', '#EC4899'],
+    fontFamily: 'Inter',
+    headingFont: 'Poppins',
+    fontSize: 'medium',
+    buttonStyle: 'rounded',
+    buttonEffect: 'shadow',
+    animations: true,
+    animationSpeed: 'normal',
+    particleEffects: false,
+    borderRadius: 8,
+    spacing: 'normal',
+    pattern: 'none',
+    patternOpacity: 0.1,
+    specialIcon: 'star'
+  })
 
   useEffect(() => {
     if (id) {
@@ -51,6 +75,17 @@ export default function RaffleDetailsPage() {
       ])
       setRaffle(raffleData)
       setPrizes(prizesData)
+      
+      // Load and parse theme if available
+      if (raffleData.themeConfig) {
+        try {
+          const parsedTheme = JSON.parse(raffleData.themeConfig)
+          setTheme(parsedTheme)
+        } catch (e) {
+          console.error('Error parsing theme config:', e)
+        }
+      }
+      
       await loadTicketStatus()
     } catch (error) {
       toast.error('Erro ao carregar detalhes da rifa')
@@ -64,8 +99,8 @@ export default function RaffleDetailsPage() {
     try {
       const tickets = await ticketService.getByRaffle(id!)
       const purchased = tickets.map(ticket => ticket.value)
-      const maxParticipants = raffle?.maxParticipants || 1000
-      const available = Array.from({ length: maxParticipants }, (_, i) => i + 1)
+      const totalTickets = raffle?.numberOfTickets || 100
+      const available = Array.from({ length: totalTickets }, (_, i) => i + 1)
         .filter(num => !purchased.includes(num))
       
       setPurchasedTickets(purchased)
@@ -149,9 +184,9 @@ export default function RaffleDetailsPage() {
   }
 
   const calculateProgress = () => {
-    if (!raffle?.maxParticipants) return 0
+    if (!raffle?.numberOfTickets) return 0
     const participants = purchasedTickets.length
-    return (participants / raffle.maxParticipants) * 100
+    return (participants / raffle.numberOfTickets) * 100
   }
 
   const calculateTimeLeft = () => {
@@ -192,8 +227,18 @@ export default function RaffleDetailsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="bg-gradient-to-br from-primary-600 to-primary-700 text-white">
-        <div className="container mx-auto px-4 py-6">
+      <div 
+        className="text-white relative"
+        style={{
+          background: theme.gradientEnabled
+            ? `${theme.gradientType}-gradient(${
+                theme.gradientType === 'linear' ? `${theme.gradientAngle}deg,` : ''
+              }${theme.gradientColors.join(', ')})`
+            : theme.primaryColor
+        }}
+      >
+        <div className="absolute inset-0 bg-black/20" />
+        <div className="relative z-10 container mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
             <button
               onClick={() => navigate('/')}
@@ -256,9 +301,12 @@ export default function RaffleDetailsPage() {
                       <button
                         key={index}
                         onClick={() => setActiveImageIndex(index)}
-                        className={`aspect-square rounded-lg overflow-hidden border-2 transition-colors ${
-                          index === activeImageIndex ? 'border-primary-500' : 'border-transparent'
-                        }`}
+                        className={`aspect-square overflow-hidden border-2 transition-colors`}
+                        style={{
+                          borderRadius: theme.buttonStyle === 'pill' ? '9999px' : 
+                                      theme.buttonStyle === 'square' ? '0px' : `${theme.borderRadius}px`,
+                          borderColor: index === activeImageIndex ? theme.primaryColor : 'transparent'
+                        }}
                       >
                         <img
                           src={image}
@@ -277,28 +325,83 @@ export default function RaffleDetailsPage() {
             </div>
 
             <div className="bg-white rounded-xl shadow-sm p-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Descrição</h2>
-              <p className="text-gray-600 whitespace-pre-wrap">{raffle.description}</p>
+              <h2 
+                className="text-2xl font-bold mb-4"
+                style={{
+                  fontFamily: theme.headingFont,
+                  color: theme.textColor
+                }}
+              >
+                Descrição
+              </h2>
+              <p 
+                className="whitespace-pre-wrap"
+                style={{
+                  fontFamily: theme.fontFamily,
+                  color: theme.textColor
+                }}
+              >
+                {raffle.description}
+              </p>
             </div>
 
             {prizes.length > 0 && (
               <div className="bg-white rounded-xl shadow-sm p-6">
-                <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                  <Trophy className="w-6 h-6 text-secondary-500" />
+                <h2 
+                  className="text-2xl font-bold mb-4 flex items-center gap-2"
+                  style={{
+                    fontFamily: theme.headingFont,
+                    color: theme.textColor
+                  }}
+                >
+                  <Trophy className="w-6 h-6" style={{ color: theme.secondaryColor }} />
                   Prêmios
                 </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {prizes.map((prize, index) => (
                     <div key={prize.id} className="border border-gray-200 rounded-lg p-4">
                       <div className="flex items-start gap-3">
-                        <div className="flex-shrink-0 w-12 h-12 bg-secondary-100 rounded-full flex items-center justify-center">
-                          <span className="text-secondary-600 font-bold">{index + 1}°</span>
+                        <div 
+                          className="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center"
+                          style={{ backgroundColor: `${theme.secondaryColor}20` }}
+                        >
+                          <span 
+                            className="font-bold"
+                            style={{ 
+                              color: theme.secondaryColor,
+                              fontFamily: theme.fontFamily
+                            }}
+                          >
+                            {index + 1}°
+                          </span>
                         </div>
                         <div className="flex-1">
-                          <h3 className="font-semibold text-gray-900">{prize.title}</h3>
-                          <p className="text-sm text-gray-600 mt-1">{prize.description}</p>
+                          <h3 
+                            className="font-semibold"
+                            style={{
+                              fontFamily: theme.headingFont,
+                              color: theme.textColor
+                            }}
+                          >
+                            {prize.title}
+                          </h3>
+                          <p 
+                            className="text-sm mt-1"
+                            style={{
+                              fontFamily: theme.fontFamily,
+                              color: theme.textColor
+                            }}
+                          >
+                            {prize.description}
+                          </p>
                           {prize.value > 0 && (
-                            <p className="text-sm font-semibold text-primary-600 mt-2">
+                            <p 
+                              className="text-sm font-semibold mt-2"
+                              style={{
+                                fontFamily: theme.fontFamily,
+                                color: theme.primaryColor
+                              }}
+                            >
                               Valor: R$ {prize.value.toFixed(2)}
                             </p>
                           )}
@@ -312,12 +415,26 @@ export default function RaffleDetailsPage() {
 
             {raffle.terms && (
               <div className="bg-white rounded-xl shadow-sm p-6">
-                <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                  <Info className="w-6 h-6" />
+                <h2 
+                  className="text-2xl font-bold mb-4 flex items-center gap-2"
+                  style={{
+                    fontFamily: theme.headingFont,
+                    color: theme.textColor
+                  }}
+                >
+                  <Info className="w-6 h-6" style={{ color: theme.accentColor }} />
                   Regras e Termos
                 </h2>
-                <div className="prose prose-sm max-w-none text-gray-600">
-                  <p className="whitespace-pre-wrap">{raffle.terms}</p>
+                <div className="prose prose-sm max-w-none">
+                  <p 
+                    className="whitespace-pre-wrap"
+                    style={{
+                      fontFamily: theme.fontFamily,
+                      color: theme.textColor
+                    }}
+                  >
+                    {raffle.terms}
+                  </p>
                 </div>
               </div>
             )}
@@ -325,19 +442,27 @@ export default function RaffleDetailsPage() {
 
           <div className="lg:col-span-1">
             <div className="bg-white rounded-xl shadow-sm p-6 sticky top-4">
-              <h1 className="text-2xl font-bold text-gray-900 mb-4">{raffle.title}</h1>
+              <h1 
+                className="text-2xl font-bold mb-4"
+                style={{
+                  fontFamily: theme.headingFont,
+                  color: theme.textColor
+                }}
+              >
+                {raffle.title}
+              </h1>
               
               <div className="mb-4">
                 <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold
-                  ${raffle.status === 'Active' ? 'bg-success-100 text-success-700' : ''}
-                  ${raffle.status === 'Draft' ? 'bg-gray-100 text-gray-700' : ''}
-                  ${raffle.status === 'Finished' ? 'bg-primary-100 text-primary-700' : ''}
-                  ${raffle.status === 'Cancelled' ? 'bg-danger-100 text-danger-700' : ''}
+                  ${raffle.status === 'Active' || raffle.status === 1 ? 'bg-success-100 text-success-700' : ''}
+                  ${raffle.status === 'Draft' || raffle.status === 0 ? 'bg-gray-100 text-gray-700' : ''}
+                  ${raffle.status === 'Finished' || raffle.status === 2 ? 'bg-primary-100 text-primary-700' : ''}
+                  ${raffle.status === 'Cancelled' || raffle.status === 3 ? 'bg-danger-100 text-danger-700' : ''}
                 `}>
-                  {raffle.status === 'Active' ? 'Rifa Ativa' : 
-                   raffle.status === 'Draft' ? 'Rascunho' :
-                   raffle.status === 'Finished' ? 'Finalizada' :
-                   raffle.status === 'Cancelled' ? 'Cancelada' : raffle.status}
+                  {raffle.status === 'Active' || raffle.status === 1 ? 'Rifa Ativa' : 
+                   raffle.status === 'Draft' || raffle.status === 0 ? 'Rascunho' :
+                   raffle.status === 'Finished' || raffle.status === 2 ? 'Finalizada' :
+                   raffle.status === 'Cancelled' || raffle.status === 3 ? 'Cancelada' : raffle.status}
                 </span>
               </div>
 
@@ -347,7 +472,13 @@ export default function RaffleDetailsPage() {
                     <DollarSign className="w-4 h-4" />
                     <span className="text-sm">Valor do bilhete</span>
                   </div>
-                  <span className="font-bold text-lg text-gray-900">
+                  <span 
+                    className="font-bold text-lg"
+                    style={{
+                      fontFamily: theme.headingFont,
+                      color: theme.primaryColor
+                    }}
+                  >
                     R$ {raffle.ticketPrice?.toFixed(2) || '0,00'}
                   </span>
                 </div>
@@ -368,7 +499,7 @@ export default function RaffleDetailsPage() {
                     <span className="text-sm">Participantes</span>
                   </div>
                   <span className="font-semibold text-gray-900">
-                    {purchasedTickets.length}{raffle.maxParticipants ? ` / ${raffle.maxParticipants}` : ''}
+                    {purchasedTickets.length}{raffle.numberOfTickets ? ` / ${raffle.numberOfTickets}` : ''}
                   </span>
                 </div>
 
@@ -383,7 +514,7 @@ export default function RaffleDetailsPage() {
                 </div>
               </div>
 
-              {raffle.maxParticipants && (
+              {raffle.numberOfTickets && (
                 <div className="mb-6">
                   <div className="flex justify-between text-sm mb-2">
                     <span className="text-gray-600">Progresso</span>
@@ -391,17 +522,28 @@ export default function RaffleDetailsPage() {
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2">
                     <div 
-                      className="bg-gradient-to-r from-primary-500 to-primary-600 h-2 rounded-full transition-all duration-300"
-                      style={{ width: `${calculateProgress()}%` }}
+                      className="h-2 rounded-full transition-all duration-300"
+                      style={{ 
+                        width: `${calculateProgress()}%`,
+                        background: theme.gradientEnabled
+                          ? `${theme.gradientType}-gradient(${theme.gradientType === 'linear' ? `${theme.gradientAngle}deg,` : ''}${theme.gradientColors.join(', ')})`
+                          : theme.primaryColor
+                      }}
                     />
                   </div>
                 </div>
               )}
 
-              {raffle.status === 'Active' && (
+              {(raffle.status === 'Active' || raffle.status === 1 || raffle.status === 0) && (
                 <>
                   <div className="mb-6 space-y-3">
-                    <label className="block text-sm font-medium text-gray-700">
+                    <label 
+                      className="block text-sm font-medium"
+                      style={{
+                        fontFamily: theme.fontFamily,
+                        color: theme.textColor
+                      }}
+                    >
                       Selecione seus bilhetes
                     </label>
                     
@@ -409,7 +551,25 @@ export default function RaffleDetailsPage() {
                       <div className="flex items-center gap-3">
                         <button
                           onClick={() => setTicketQuantity(Math.max(1, ticketQuantity - 1))}
-                          className="w-10 h-10 rounded-lg border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition-colors"
+                          className="w-10 h-10 border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition-colors"
+                          style={{
+                            borderRadius: theme.buttonStyle === 'pill' ? '9999px' : 
+                                        theme.buttonStyle === 'square' ? '0px' : `${theme.borderRadius}px`,
+                            fontFamily: theme.fontFamily,
+                            boxShadow: theme.buttonEffect === 'shadow' ? '0 2px 4px rgba(0,0,0,0.1)' : 'none',
+                            transform: theme.buttonEffect === 'scale' ? 'scale(1)' : 'none',
+                            filter: theme.buttonEffect === 'glow' ? `drop-shadow(0 0 8px ${theme.primaryColor}40)` : 'none'
+                          }}
+                          onMouseEnter={(e) => {
+                            if (theme.buttonEffect === 'scale') {
+                              e.currentTarget.style.transform = 'scale(1.05)'
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (theme.buttonEffect === 'scale') {
+                              e.currentTarget.style.transform = 'scale(1)'
+                            }
+                          }}
                         >
                           -
                         </button>
@@ -417,19 +577,49 @@ export default function RaffleDetailsPage() {
                           type="number"
                           value={ticketQuantity}
                           onChange={(e) => setTicketQuantity(Math.max(1, Math.min(parseInt(e.target.value) || 1, raffle.maxTicketPerUser || 100)))}
-                          className="w-20 text-center border border-gray-300 rounded-lg px-2 py-2 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                          className="w-20 text-center border border-gray-300 px-2 py-2 focus:ring-2 focus:border-transparent"
+                          style={{
+                            borderRadius: theme.buttonStyle === 'pill' ? '9999px' : 
+                                        theme.buttonStyle === 'square' ? '0px' : `${theme.borderRadius}px`,
+                            fontFamily: theme.fontFamily,
+                            focusRingColor: theme.primaryColor
+                          }}
                           min="1"
                           max={raffle.maxTicketPerUser || 100}
                         />
                         <button
                           onClick={() => setTicketQuantity(Math.min(ticketQuantity + 1, raffle.maxTicketPerUser || 100))}
-                          className="w-10 h-10 rounded-lg border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition-colors"
+                          className="w-10 h-10 border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition-colors"
+                          style={{
+                            borderRadius: theme.buttonStyle === 'pill' ? '9999px' : 
+                                        theme.buttonStyle === 'square' ? '0px' : `${theme.borderRadius}px`,
+                            fontFamily: theme.fontFamily,
+                            boxShadow: theme.buttonEffect === 'shadow' ? '0 2px 4px rgba(0,0,0,0.1)' : 'none',
+                            transform: theme.buttonEffect === 'scale' ? 'scale(1)' : 'none',
+                            filter: theme.buttonEffect === 'glow' ? `drop-shadow(0 0 8px ${theme.primaryColor}40)` : 'none'
+                          }}
+                          onMouseEnter={(e) => {
+                            if (theme.buttonEffect === 'scale') {
+                              e.currentTarget.style.transform = 'scale(1.05)'
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (theme.buttonEffect === 'scale') {
+                              e.currentTarget.style.transform = 'scale(1)'
+                            }
+                          }}
                         >
                           +
                         </button>
                       </div>
                       {raffle.maxTicketPerUser > 0 && (
-                        <p className="text-xs text-gray-500 mt-1">
+                        <p 
+                          className="text-xs mt-1"
+                          style={{
+                            fontFamily: theme.fontFamily,
+                            color: theme.textColor
+                          }}
+                        >
                           Máximo: {raffle.maxTicketPerUser} bilhetes por pessoa
                         </p>
                       )}
@@ -438,14 +628,58 @@ export default function RaffleDetailsPage() {
                     <div className="grid grid-cols-2 gap-2">
                       <button
                         onClick={handleRandomTicketSelection}
-                        className="flex items-center justify-center gap-2 px-4 py-2 bg-secondary-100 text-secondary-700 rounded-lg hover:bg-secondary-200 transition-colors"
+                        className="flex items-center justify-center gap-2 px-4 py-2 transition-colors"
+                        style={{
+                          backgroundColor: `${theme.secondaryColor}20`,
+                          color: theme.secondaryColor,
+                          borderRadius: theme.buttonStyle === 'pill' ? '9999px' : 
+                                      theme.buttonStyle === 'square' ? '0px' : `${theme.borderRadius}px`,
+                          fontFamily: theme.fontFamily,
+                          boxShadow: theme.buttonEffect === 'shadow' ? '0 2px 4px rgba(0,0,0,0.1)' : 'none',
+                          transform: theme.buttonEffect === 'scale' ? 'scale(1)' : 'none',
+                          filter: theme.buttonEffect === 'glow' ? `drop-shadow(0 0 8px ${theme.secondaryColor}40)` : 'none'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = `${theme.secondaryColor}30`
+                          if (theme.buttonEffect === 'scale') {
+                            e.currentTarget.style.transform = 'scale(1.05)'
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = `${theme.secondaryColor}20`
+                          if (theme.buttonEffect === 'scale') {
+                            e.currentTarget.style.transform = 'scale(1)'
+                          }
+                        }}
                       >
                         <Smartphone className="w-4 h-4" />
                         Escolher Aleatório
                       </button>
                       <button
                         onClick={() => setShowTicketGrid(!showTicketGrid)}
-                        className="flex items-center justify-center gap-2 px-4 py-2 bg-primary-100 text-primary-700 rounded-lg hover:bg-primary-200 transition-colors"
+                        className="flex items-center justify-center gap-2 px-4 py-2 transition-colors"
+                        style={{
+                          backgroundColor: `${theme.primaryColor}20`,
+                          color: theme.primaryColor,
+                          borderRadius: theme.buttonStyle === 'pill' ? '9999px' : 
+                                      theme.buttonStyle === 'square' ? '0px' : `${theme.borderRadius}px`,
+                          fontFamily: theme.fontFamily,
+                          boxShadow: theme.buttonEffect === 'shadow' ? '0 2px 4px rgba(0,0,0,0.1)' : 'none',
+                          transform: theme.buttonEffect === 'scale' ? 'scale(1)' : 'none',
+                          filter: theme.buttonEffect === 'glow' ? `drop-shadow(0 0 8px ${theme.primaryColor}40)` : 'none'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = `${theme.primaryColor}30`
+                          if (theme.buttonEffect === 'scale') {
+                            e.currentTarget.style.transform = 'scale(1.05)'
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = `${theme.primaryColor}20`
+                          if (theme.buttonEffect === 'scale') {
+                            e.currentTarget.style.transform = 'scale(1)'
+                          }
+                        }}
                       >
                         <Grid3X3 className="w-4 h-4" />
                         Escolher Números
@@ -454,19 +688,42 @@ export default function RaffleDetailsPage() {
                   </div>
 
                   {selectedTickets.length > 0 && (
-                    <div className="mb-4 p-3 bg-primary-50 rounded-lg">
-                      <h4 className="text-sm font-medium text-primary-800 mb-2">
+                    <div 
+                      className="mb-4 p-3 rounded-lg"
+                      style={{ backgroundColor: `${theme.primaryColor}10` }}
+                    >
+                      <h4 
+                        className="text-sm font-medium mb-2"
+                        style={{
+                          fontFamily: theme.headingFont,
+                          color: theme.primaryColor
+                        }}
+                      >
                         Bilhetes Selecionados ({selectedTickets.length})
                       </h4>
                       <div className="flex flex-wrap gap-1">
                         {selectedTickets.sort((a, b) => a - b).map(ticket => (
                           <span
                             key={ticket}
-                            className="inline-flex items-center px-2 py-1 bg-primary-600 text-white text-xs rounded cursor-pointer hover:bg-primary-700 transition-colors"
+                            className="inline-flex items-center px-2 py-1 text-white text-xs cursor-pointer transition-colors"
+                            style={{
+                              backgroundColor: theme.primaryColor,
+                              borderRadius: theme.buttonStyle === 'pill' ? '9999px' : 
+                                          theme.buttonStyle === 'square' ? '0px' : `${theme.borderRadius}px`,
+                              fontFamily: theme.fontFamily
+                            }}
+                            onMouseEnter={(e) => {
+                              const shade = parseInt(theme.primaryColor.replace('#', ''), 16)
+                              const darkerShade = '#' + Math.max(0, shade - 0x222222).toString(16).padStart(6, '0')
+                              e.currentTarget.style.backgroundColor = darkerShade
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = theme.primaryColor
+                            }}
                             onClick={() => handleTicketSelection(ticket)}
                           >
                             #{ticket.toString().padStart(4, '0')}
-                            <button className="ml-1 text-primary-200 hover:text-white">×</button>
+                            <button className="ml-1 opacity-70 hover:opacity-100">×</button>
                           </span>
                         ))}
                       </div>
@@ -476,7 +733,7 @@ export default function RaffleDetailsPage() {
                   {showTicketGrid && (
                     <div className="mb-4 p-4 border border-gray-200 rounded-lg max-h-60 overflow-y-auto">
                       <div className="grid grid-cols-8 gap-1 text-xs">
-                        {Array.from({ length: Math.min(raffle.maxParticipants || 100, 200) }, (_, i) => i + 1).map(ticketNumber => {
+                        {Array.from({ length: Math.min(raffle.numberOfTickets || 100, 1000) }, (_, i) => i + 1).map(ticketNumber => {
                           const isPurchased = purchasedTickets.includes(ticketNumber)
                           const isSelected = selectedTickets.includes(ticketNumber)
                           
@@ -485,22 +742,48 @@ export default function RaffleDetailsPage() {
                               key={ticketNumber}
                               onClick={() => !isPurchased && handleTicketSelection(ticketNumber)}
                               disabled={isPurchased}
-                              className={`
-                                h-8 rounded text-xs font-medium transition-colors
-                                ${isPurchased 
-                                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                              className="h-8 text-xs font-medium transition-colors"
+                              style={{
+                                borderRadius: theme.buttonStyle === 'pill' ? '9999px' : 
+                                            theme.buttonStyle === 'square' ? '0px' : `${theme.borderRadius}px`,
+                                fontFamily: theme.fontFamily,
+                                backgroundColor: isPurchased 
+                                  ? '#d1d5db'
                                   : isSelected
-                                    ? 'bg-primary-600 text-white'
-                                    : 'bg-gray-100 text-gray-700 hover:bg-primary-100 hover:text-primary-700 cursor-pointer'
+                                    ? theme.primaryColor
+                                    : '#f3f4f6',
+                                color: isPurchased
+                                  ? '#6b7280'
+                                  : isSelected
+                                    ? 'white'
+                                    : '#374151',
+                                cursor: isPurchased ? 'not-allowed' : 'pointer'
+                              }}
+                              onMouseEnter={(e) => {
+                                if (!isPurchased && !isSelected) {
+                                  e.currentTarget.style.backgroundColor = `${theme.primaryColor}20`
+                                  e.currentTarget.style.color = theme.primaryColor
                                 }
-                              `}
+                              }}
+                              onMouseLeave={(e) => {
+                                if (!isPurchased && !isSelected) {
+                                  e.currentTarget.style.backgroundColor = '#f3f4f6'
+                                  e.currentTarget.style.color = '#374151'
+                                }
+                              }}
                             >
                               {ticketNumber.toString().padStart(2, '0')}
                             </button>
                           )
                         })}
                       </div>
-                      <p className="text-xs text-gray-500 mt-2 text-center">
+                      <p 
+                        className="text-xs mt-2 text-center"
+                        style={{
+                          fontFamily: theme.fontFamily,
+                          color: theme.textColor
+                        }}
+                      >
                         Disponíveis: {availableTickets.length} | Vendidos: {purchasedTickets.length}
                       </p>
                     </div>
@@ -508,8 +791,21 @@ export default function RaffleDetailsPage() {
 
                   <div className="border-t pt-4 mb-4">
                     <div className="flex justify-between items-center">
-                      <span className="text-gray-600">Total</span>
-                      <span className="text-2xl font-bold text-primary-600">
+                      <span 
+                        style={{
+                          fontFamily: theme.fontFamily,
+                          color: theme.textColor
+                        }}
+                      >
+                        Total
+                      </span>
+                      <span 
+                        className="text-2xl font-bold"
+                        style={{
+                          fontFamily: theme.headingFont,
+                          color: theme.primaryColor
+                        }}
+                      >
                         R$ {(selectedTickets.length * (raffle.ticketPrice || 0)).toFixed(2)}
                       </span>
                     </div>
@@ -518,7 +814,40 @@ export default function RaffleDetailsPage() {
                   <button
                     onClick={handleTicketPurchase}
                     disabled={selectedTickets.length === 0 || isPurchasing}
-                    className="w-full btn btn-primary btn-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full px-6 py-4 text-white font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{
+                      background: theme.gradientEnabled
+                        ? `${theme.gradientType}-gradient(${theme.gradientType === 'linear' ? `${theme.gradientAngle}deg,` : ''}${theme.gradientColors.join(', ')})`
+                        : theme.primaryColor,
+                      borderRadius: theme.buttonStyle === 'pill' ? '9999px' : 
+                                  theme.buttonStyle === 'square' ? '0px' : `${theme.borderRadius}px`,
+                      fontFamily: theme.fontFamily,
+                      boxShadow: theme.buttonEffect === 'shadow' ? '0 4px 12px rgba(0,0,0,0.15)' : 'none',
+                      transform: theme.buttonEffect === 'scale' ? 'scale(1)' : 'none',
+                      filter: theme.buttonEffect === 'glow' ? `drop-shadow(0 0 12px ${theme.primaryColor}60)` : 'none'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (selectedTickets.length > 0 && !isPurchasing) {
+                        if (theme.buttonEffect === 'scale') {
+                          e.currentTarget.style.transform = 'scale(1.02)'
+                        }
+                        if (!theme.gradientEnabled) {
+                          const shade = parseInt(theme.primaryColor.replace('#', ''), 16)
+                          const darkerShade = '#' + Math.max(0, shade - 0x222222).toString(16).padStart(6, '0')
+                          e.currentTarget.style.backgroundColor = darkerShade
+                        }
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (selectedTickets.length > 0 && !isPurchasing) {
+                        if (theme.buttonEffect === 'scale') {
+                          e.currentTarget.style.transform = 'scale(1)'
+                        }
+                        if (!theme.gradientEnabled) {
+                          e.currentTarget.style.backgroundColor = theme.primaryColor
+                        }
+                      }
+                    }}
                   >
                     {isPurchasing ? (
                       <>

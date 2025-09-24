@@ -11,15 +11,18 @@ import {
   Plus,
   X,
   Upload,
-  Ticket
+  Ticket,
+  Palette
 } from 'lucide-react'
 import { raffleService, Raffle } from '../../services/api'
 import toast from 'react-hot-toast'
+import ImageUpload from '../../components/ImageUpload'
+import ThemeCustomizer from '../../components/ThemeCustomizer'
 
 interface RaffleFormData {
   title: string
   description: string
-  type: string
+  type: string | number
   images: string[]
   startDate: string
   endDate: string
@@ -27,8 +30,10 @@ interface RaffleFormData {
   ticketPrice: number
   maxTicketPerUser: number
   maxParticipants: number
-  paymentMethod: string
-  status: string
+  paymentMethod: string | number
+  status: string | number
+  numberOfTickets: number
+  theme: any
 }
 
 export default function EditRaffle() {
@@ -36,7 +41,8 @@ export default function EditRaffle() {
   const { id } = useParams<{ id: string }>()
   const [isLoading, setIsLoading] = useState(false)
   const [isLoadingRaffle, setIsLoadingRaffle] = useState(true)
-  const [activeTab, setActiveTab] = useState('basic')
+  const [currentStep, setCurrentStep] = useState(1)
+  const totalSteps = 5
   const [formData, setFormData] = useState<RaffleFormData>({
     title: '',
     description: '',
@@ -49,32 +55,177 @@ export default function EditRaffle() {
     maxTicketPerUser: 0,
     maxParticipants: 0,
     paymentMethod: 'pix',
-    status: 'Draft'
+    status: 'Draft',
+    numberOfTickets: 100,
+    theme: {
+      primaryColor: '#DC2626',
+      secondaryColor: '#000000',
+      accentColor: '#F59E0B',
+      backgroundColor: '#FFFFFF',
+      textColor: '#1F2937',
+      gradientEnabled: true,
+      gradientType: 'linear',
+      gradientAngle: 45,
+      gradientColors: ['#DC2626', '#F59E0B'],
+      fontFamily: 'Inter',
+      headingFont: 'Poppins',
+      fontSize: 'medium',
+      buttonStyle: 'rounded',
+      buttonEffect: 'shadow',
+      animations: true,
+      animationSpeed: 'normal',
+      particleEffects: false,
+      borderRadius: 8,
+      spacing: 'normal',
+      pattern: 'none',
+      patternOpacity: 0.1,
+      specialIcon: 'star'
+    }
   })
+
+  const steps = [
+    { number: 1, title: 'Básico', icon: FileText, description: 'Nome e descrição' },
+    { number: 2, title: 'Imagens', icon: Image, description: 'Fotos da rifa' },
+    { number: 3, title: 'Datas', icon: Calendar, description: 'Período da rifa' },
+    { number: 4, title: 'Valores', icon: DollarSign, description: 'Preços e limites' },
+    { number: 5, title: 'Tema', icon: Palette, description: 'Personalização visual' }
+  ]
 
   useEffect(() => {
     if (id) {
       loadRaffle()
     }
   }, [id])
+  
 
   const loadRaffle = async () => {
     try {
       const raffle = await raffleService.getById(id!)
-      setFormData({
+      
+      // Converter status numérico para string se necessário
+      const getStatusString = (status: string | number): string => {
+        if (typeof status === 'number') {
+          switch (status) {
+            case 0: return 'Draft'
+            case 1: return 'Active'
+            case 2: return 'Finished'
+            case 3: return 'Cancelled'
+            default: return 'Draft'
+          }
+        }
+        return status
+      }
+      
+      // Função para formatar data para datetime-local input
+      const formatDateForInput = (dateString: string | null | undefined, isStartDate: boolean = false): string => {
+        // Se não tem data ou é a data padrão do C#, define uma data padrão razoável
+        if (!dateString || dateString.startsWith('0001-')) {
+          
+          const now = new Date()
+          let defaultDate: Date
+          
+          if (isStartDate) {
+            // Para data de início, usa a data/hora atual
+            defaultDate = now
+          } else {
+            // Para data de fim, usa 7 dias a partir de agora
+            defaultDate = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
+          }
+          
+          const year = defaultDate.getFullYear()
+          const month = String(defaultDate.getMonth() + 1).padStart(2, '0')
+          const day = String(defaultDate.getDate()).padStart(2, '0')
+          const hours = String(defaultDate.getHours()).padStart(2, '0')
+          const minutes = String(defaultDate.getMinutes()).padStart(2, '0')
+          
+          const formatted = `${year}-${month}-${day}T${hours}:${minutes}`
+          return formatted
+        }
+        
+        try {
+          const date = new Date(dateString)
+          
+          // Verifica se a data é válida
+          if (isNaN(date.getTime())) {
+            const now = new Date()
+            const defaultDate = isStartDate ? now : new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
+            
+            const year = defaultDate.getFullYear()
+            const month = String(defaultDate.getMonth() + 1).padStart(2, '0')
+            const day = String(defaultDate.getDate()).padStart(2, '0')
+            const hours = String(defaultDate.getHours()).padStart(2, '0')
+            const minutes = String(defaultDate.getMinutes()).padStart(2, '0')
+            
+            return `${year}-${month}-${day}T${hours}:${minutes}`
+          }
+          
+          // Formata para yyyy-MM-ddTHH:mm
+          const year = date.getFullYear()
+          const month = String(date.getMonth() + 1).padStart(2, '0')
+          const day = String(date.getDate()).padStart(2, '0')
+          const hours = String(date.getHours()).padStart(2, '0')
+          const minutes = String(date.getMinutes()).padStart(2, '0')
+          
+          const formatted = `${year}-${month}-${day}T${hours}:${minutes}`
+          return formatted
+        } catch (error) {
+          // Em caso de erro, retorna data padrão
+          const now = new Date()
+          const defaultDate = isStartDate ? now : new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
+          
+          const year = defaultDate.getFullYear()
+          const month = String(defaultDate.getMonth() + 1).padStart(2, '0')
+          const day = String(defaultDate.getDate()).padStart(2, '0')
+          const hours = String(defaultDate.getHours()).padStart(2, '0')
+          const minutes = String(defaultDate.getMinutes()).padStart(2, '0')
+          
+          return `${year}-${month}-${day}T${hours}:${minutes}`
+        }
+      }
+      
+      const newFormData = {
         title: raffle.title || '',
         description: raffle.description || '',
         type: raffle.type || 'product',
         images: raffle.images || [],
-        startDate: raffle.startDate ? raffle.startDate.slice(0, 16) : '',
-        endDate: raffle.endDate ? raffle.endDate.slice(0, 16) : '',
+        startDate: formatDateForInput(raffle.startDate, true),
+        endDate: formatDateForInput(raffle.endDate, false),
         terms: raffle.terms || '',
-        ticketPrice: raffle.ticketPrice || 0,
-        maxTicketPerUser: raffle.maxTicketPerUser || 0,
-        maxParticipants: raffle.maxParticipants || 0,
+        ticketPrice: Number(raffle.ticketPrice) || 0, // Usar o valor do banco, 0 se não existir
+        maxTicketPerUser: Number(raffle.maxTicketPerUser) || 0,
+        maxParticipants: Number(raffle.maxParticipants) || 0,
         paymentMethod: raffle.paymentMethod || 'pix',
-        status: raffle.status || 'Draft'
-      })
+        status: getStatusString(raffle.status),
+        numberOfTickets: Number(raffle.numberOfTickets) || 0,
+        theme: raffle.themeConfig ? 
+          JSON.parse(raffle.themeConfig) : 
+          {
+            primaryColor: '#DC2626',
+            secondaryColor: '#000000',
+            accentColor: '#F59E0B',
+            backgroundColor: '#FFFFFF',
+            textColor: '#1F2937',
+            gradientEnabled: true,
+            gradientType: 'linear',
+            gradientAngle: 45,
+            gradientColors: ['#DC2626', '#F59E0B'],
+            fontFamily: 'Inter',
+            headingFont: 'Poppins',
+            fontSize: 'medium',
+            buttonStyle: 'rounded',
+            buttonEffect: 'shadow',
+            animations: true,
+            animationSpeed: 'normal',
+            particleEffects: false,
+            borderRadius: 8,
+            spacing: 'normal',
+            pattern: 'none',
+            patternOpacity: 0.1,
+            specialIcon: 'star'
+          }
+      }
+      
+      setFormData(newFormData)
     } catch (error) {
       toast.error('Erro ao carregar rifa')
       navigate('/dashboard/raffles')
@@ -93,20 +244,30 @@ export default function EditRaffle() {
     }))
   }
 
-  const handleImageAdd = (url: string) => {
-    if (url && !formData.images.includes(url)) {
-      setFormData(prev => ({
-        ...prev,
-        images: [...prev.images, url]
-      }))
+  const handleImageChange = (images: string[]) => {
+    setFormData(prev => ({
+      ...prev,
+      images: images
+    }))
+  }
+
+  const handleThemeChange = (theme: any) => {
+    setFormData(prev => ({
+      ...prev,
+      theme: theme
+    }))
+  }
+
+  const nextStep = () => {
+    if (currentStep < totalSteps) {
+      setCurrentStep(currentStep + 1)
     }
   }
 
-  const handleImageRemove = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      images: prev.images.filter((_, i) => i !== index)
-    }))
+  const prevStep = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1)
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -114,25 +275,58 @@ export default function EditRaffle() {
     
     if (!formData.title || !formData.description) {
       toast.error('Por favor, preencha todos os campos obrigatórios')
-      setActiveTab('basic')
+      setCurrentStep(1)
       return
     }
 
     if (!formData.startDate || !formData.endDate) {
       toast.error('Por favor, defina as datas de início e término')
-      setActiveTab('dates')
+      setCurrentStep(3)
       return
     }
 
-    if (formData.ticketPrice <= 0) {
+    // Só validar preço se estiver vazio ou zero
+    if (!formData.ticketPrice || formData.ticketPrice <= 0) {
       toast.error('Por favor, defina um valor válido para o bilhete')
-      setActiveTab('pricing')
+      setCurrentStep(4)
       return
     }
 
     setIsLoading(true)
     try {
-      await raffleService.update(id!, formData)
+      // Converter status para número antes de enviar
+      const getStatusNumber = (status: string | number): number => {
+        if (typeof status === 'string') {
+          switch (status) {
+            case 'Draft': return 0
+            case 'Active': return 1
+            case 'Finished': return 2
+            case 'Cancelled': return 3
+            default: return 0
+          }
+        }
+        return status
+      }
+      
+      // Formatar datas para ISO 8601 antes de enviar
+      const formatDateForBackend = (dateString: string): string => {
+        if (!dateString) return new Date().toISOString()
+        const date = new Date(dateString)
+        return date.toISOString()
+      }
+      
+      const dataToSend = {
+        ...formData,
+        startDate: formatDateForBackend(formData.startDate),
+        endDate: formatDateForBackend(formData.endDate),
+        status: getStatusNumber(formData.status),
+        type: typeof formData.type === 'string' ? 0 : formData.type, // Converter type também
+        paymentMethod: typeof formData.paymentMethod === 'string' ? 0 : formData.paymentMethod,
+        themeConfig: JSON.stringify(formData.theme) // Convert theme object to JSON string for backend
+      }
+      delete dataToSend.theme // Remove theme object as we're sending themeConfig instead
+      
+      await raffleService.update(id!, dataToSend)
       toast.success('Rifa atualizada com sucesso!')
       navigate('/dashboard/raffles')
     } catch (error) {
@@ -150,11 +344,15 @@ export default function EditRaffle() {
 
     setIsLoading(true)
     try {
-      const raffleData = {
+      const dataToSend = {
         ...formData,
-        status: 'Active'
+        status: 1, // Active = 1
+        type: typeof formData.type === 'string' ? 0 : formData.type,
+        paymentMethod: typeof formData.paymentMethod === 'string' ? 0 : formData.paymentMethod,
+        themeConfig: JSON.stringify(formData.theme) // Convert theme object to JSON string for backend
       }
-      await raffleService.update(id!, raffleData)
+      delete dataToSend.theme // Remove theme object as we're sending themeConfig instead
+      await raffleService.update(id!, dataToSend)
       toast.success('Rifa ativada com sucesso!')
       navigate('/dashboard/raffles')
     } catch (error) {
@@ -226,35 +424,52 @@ export default function EditRaffle() {
       )}
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-        <div className="border-b border-gray-200">
-          <nav className="flex space-x-8 px-6" aria-label="Tabs">
-            {[
-              { id: 'basic', label: 'Informações Básicas', icon: FileText },
-              { id: 'images', label: 'Imagens', icon: Image },
-              { id: 'dates', label: 'Datas', icon: Calendar },
-              { id: 'pricing', label: 'Preços e Limites', icon: DollarSign },
-              { id: 'rules', label: 'Regras e Termos', icon: Users }
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`
-                  flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors
-                  ${activeTab === tab.id
-                    ? 'border-primary-500 text-primary-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }
-                `}
-              >
-                <tab.icon className="w-4 h-4" />
-                {tab.label}
-              </button>
+        <div className="border-b border-gray-200 px-6 py-4">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">
+              {steps[currentStep - 1].title}
+            </h2>
+            <span className="text-sm text-gray-500">
+              Passo {currentStep} de {totalSteps}
+            </span>
+          </div>
+
+          <div className="flex items-center space-x-4">
+            {steps.map((step, index) => (
+              <div key={step.number} className="flex items-center">
+                <div
+                  className={`
+                    flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium
+                    ${currentStep >= step.number
+                      ? 'bg-primary-600 text-white'
+                      : 'bg-gray-200 text-gray-600'
+                    }
+                  `}
+                >
+                  {currentStep > step.number ? (
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  ) : (
+                    step.number
+                  )}
+                </div>
+                <div className="ml-2 text-sm">
+                  <div className={`font-medium ${currentStep >= step.number ? 'text-primary-600' : 'text-gray-500'}`}>
+                    {step.title}
+                  </div>
+                  <div className="text-gray-400 text-xs">{step.description}</div>
+                </div>
+                {index < steps.length - 1 && (
+                  <div className={`ml-4 w-12 h-0.5 ${currentStep > step.number ? 'bg-primary-600' : 'bg-gray-200'}`} />
+                )}
+              </div>
             ))}
-          </nav>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6">
-          {activeTab === 'basic' && (
+          {currentStep === 1 && (
             <div className="space-y-6">
               <div>
                 <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
@@ -309,78 +524,27 @@ export default function EditRaffle() {
             </div>
           )}
 
-          {activeTab === 'images' && (
+          {currentStep === 2 && (
             <div className="space-y-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Imagens da Rifa
                 </label>
-                <div className="space-y-4">
-                  <div className="flex gap-2">
-                    <input
-                      type="url"
-                      placeholder="Cole a URL da imagem aqui"
-                      className="input flex-1"
-                      onKeyPress={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault()
-                          const input = e.target as HTMLInputElement
-                          handleImageAdd(input.value)
-                          input.value = ''
-                        }
-                      }}
-                    />
-                    <button
-                      type="button"
-                      className="btn btn-secondary btn-md"
-                      onClick={() => {
-                        const input = document.querySelector('input[type="url"]') as HTMLInputElement
-                        if (input) {
-                          handleImageAdd(input.value)
-                          input.value = ''
-                        }
-                      }}
-                    >
-                      <Plus className="w-4 h-4" />
-                    </button>
-                  </div>
-
-                  {formData.images.length === 0 ? (
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-                      <Upload className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                      <p className="text-gray-600">Adicione URLs de imagens para sua rifa</p>
-                      <p className="text-sm text-gray-500 mt-1">Recomendamos pelo menos 3 imagens</p>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                      {formData.images.map((image, index) => (
-                        <div key={index} className="relative group">
-                          <img
-                            src={image}
-                            alt={`Imagem ${index + 1}`}
-                            className="w-full h-32 object-cover rounded-lg"
-                            onError={(e) => {
-                              const target = e.target as HTMLImageElement
-                              target.src = 'https://via.placeholder.com/300x200?text=Erro+ao+carregar'
-                            }}
-                          />
-                          <button
-                            type="button"
-                            onClick={() => handleImageRemove(index)}
-                            className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                <p className="text-sm text-gray-500 mb-4">
+                  Faça upload de até 5 imagens para sua rifa. A primeira imagem será usada como principal.
+                </p>
+                <ImageUpload
+                  images={formData.images}
+                  onChange={handleImageChange}
+                  maxImages={5}
+                  maxFileSize={5 * 1024 * 1024}
+                  showPreview={true}
+                />
               </div>
             </div>
           )}
 
-          {activeTab === 'dates' && (
+          {currentStep === 3 && (
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
@@ -422,7 +586,7 @@ export default function EditRaffle() {
             </div>
           )}
 
-          {activeTab === 'pricing' && (
+          {currentStep === 4 && (
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
@@ -495,11 +659,7 @@ export default function EditRaffle() {
                   <p className="text-xs text-gray-500 mt-1">Deixe 0 para sem limite</p>
                 </div>
               </div>
-            </div>
-          )}
 
-          {activeTab === 'rules' && (
-            <div className="space-y-6">
               <div>
                 <label htmlFor="terms" className="block text-sm font-medium text-gray-700 mb-2">
                   Termos e Condições
@@ -509,25 +669,82 @@ export default function EditRaffle() {
                   name="terms"
                   value={formData.terms}
                   onChange={handleInputChange}
-                  rows={8}
+                  rows={6}
                   className="input"
                   placeholder="Descreva as regras, termos e condições da sua rifa..."
                 />
               </div>
+            </div>
+          )}
 
-              <div className="bg-gray-50 rounded-lg p-4">
-                <h4 className="font-medium text-gray-900 mb-2">Sugestões de conteúdo:</h4>
-                <ul className="text-sm text-gray-600 space-y-1 list-disc list-inside">
-                  <li>Como será realizado o sorteio</li>
-                  <li>Data e hora do sorteio</li>
-                  <li>Como o vencedor será notificado</li>
-                  <li>Prazo para retirada do prêmio</li>
-                  <li>Documentos necessários</li>
-                  <li>Restrições de participação</li>
-                </ul>
+
+          {currentStep === 5 && (
+            <div className="space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-4">
+                  Personalização do Tema da Rifa
+                </label>
+                <p className="text-sm text-gray-500 mb-6">
+                  Configure cores, tipografia, efeitos e layout para criar uma experiência única para os participantes.
+                </p>
+                <ThemeCustomizer
+                  theme={formData.theme}
+                  onChange={handleThemeChange}
+                />
               </div>
             </div>
           )}
+
+          <div className="flex justify-between items-center pt-6 border-t border-gray-200">
+            <button
+              type="button"
+              onClick={prevStep}
+              disabled={currentStep === 1}
+              className={`
+                flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors
+                ${currentStep === 1
+                  ? 'text-gray-400 cursor-not-allowed'
+                  : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                }
+              `}
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Anterior
+            </button>
+
+            <div className="flex items-center gap-3">
+              {currentStep < totalSteps ? (
+                <button
+                  type="button"
+                  onClick={nextStep}
+                  className="btn btn-primary btn-lg flex items-center gap-2"
+                >
+                  Próximo
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              ) : (
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="btn btn-primary btn-lg flex items-center gap-2"
+                >
+                  {isLoading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      Salvando...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4" />
+                      Salvar Alterações
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
+          </div>
         </form>
       </div>
     </div>

@@ -53,9 +53,8 @@ export const DEFAULTS = {
   RAFFLE: {
     TICKET_PRICE: 10,
     NUMBER_OF_TICKETS: 100,
-    IMAGE_URL: 'https://via.placeholder.com/800x400',
-    DESCRIPTION: 'Participe desta incrível rifa!',
-    PRIZE_DESCRIPTION: 'Prêmio surpresa'
+    DESCRIPTION: '',
+    TERMS: 'Consulte os termos gerais da plataforma.'
   },
   USER: {
     AVATAR: 'https://ui-avatars.com/api/?name=User&background=9333ea&color=fff'

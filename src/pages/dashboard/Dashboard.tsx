@@ -16,25 +16,33 @@ import {
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { raffleService } from '../../services/api'
+import SYSTEM_CONFIG from '../../config/systemConfig'
+import DashboardClient from './DashboardClient'
 
 interface RaffleData {
-  id: number
+  id: number | string
   title: string
   description: string
-  prizeTitle: string
-  prizeDescription: string
-  imageUrl: string
+  prizeTitle?: string
+  prizeDescription?: string
+  imageUrl?: string
+  images?: string[]
   ticketPrice: number
   numberOfTickets: number
   startDate: string
   endDate: string
-  status: number
-  creatorId: string
+  status: number | string
+  creatorId?: string
   soldTickets?: number
 }
 
 export default function Dashboard() {
   const { user } = useAuth()
+  
+  // Se estiver no modo cliente e não for admin, mostra dashboard de cliente
+  if (SYSTEM_CONFIG.mode === 'client' && !user?.isAdmin) {
+    return <DashboardClient />
+  }
   const [myRaffles, setMyRaffles] = useState<RaffleData[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -56,26 +64,16 @@ export default function Dashboard() {
 
       const allRaffles = await raffleService.getAll()
       
-      const userRaffles = allRaffles.filter(
-        (raffle: RaffleData) => raffle.creatorId === user?.id
-      )
+      // Por enquanto, mostrar todas as rifas para admin
+      const userRaffles = user?.isAdmin 
+        ? allRaffles 
+        : allRaffles.filter((raffle: RaffleData) => raffle.creatorId === user?.id)
 
-      const rafflesWithSales = await Promise.all(
-        userRaffles.map(async (raffle: RaffleData) => {
-          try {
-            const tickets = await raffleService.getTickets(raffle.id)
-            return {
-              ...raffle,
-              soldTickets: tickets.length
-            }
-          } catch {
-            return {
-              ...raffle,
-              soldTickets: 0
-            }
-          }
-        })
-      )
+      // Por enquanto, não temos endpoint de tickets, então usar valor mockado
+      const rafflesWithSales = userRaffles.map((raffle: RaffleData) => ({
+        ...raffle,
+        soldTickets: 0 // TODO: Implementar quando endpoint de tickets estiver disponível
+      }))
 
       setMyRaffles(rafflesWithSales)
 
@@ -124,16 +122,18 @@ export default function Dashboard() {
                 Olá, {user?.name || 'Usuário'} 👋
               </h1>
               <p className="text-gray-600 mt-1">
-                Veja como estão suas rifas hoje
+                {user?.isAdmin ? 'Gerencie suas rifas' : 'Suas participações em rifas'}
               </p>
             </div>
-            <Link
-              to="/dashboard/raffles/create"
-              className="inline-flex items-center gap-2 bg-purple-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-purple-700 transition-colors"
-            >
-              <Plus className="w-5 h-5" />
-              Criar Nova Rifa
-            </Link>
+            {user?.isAdmin && (
+              <Link
+                to="/dashboard/admin/raffles/create"
+                className="inline-flex items-center gap-2 bg-purple-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-purple-700 transition-colors"
+              >
+                <Plus className="w-5 h-5" />
+                Criar Nova Rifa
+              </Link>
+            )}
           </div>
         </div>
       </div>
@@ -204,7 +204,15 @@ export default function Dashboard() {
                   return (
                     <div key={raffle.id} className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                       <img 
-                        src={raffle.imageUrl || 'https://via.placeholder.com/300x200'} 
+                        src={
+                          raffle.images && raffle.images.length > 0 
+                            ? raffle.images[0].startsWith('http') 
+                              ? raffle.images[0] 
+                              : `http://localhost:5044${raffle.images[0]}`
+                            : raffle.coverImageUrl 
+                            || raffle.imageBanner
+                            || 'https://via.placeholder.com/300x200'
+                        } 
                         alt={raffle.title}
                         className="w-20 h-20 object-cover rounded-lg"
                       />
@@ -229,7 +237,7 @@ export default function Dashboard() {
                         </div>
                       </div>
                       <Link
-                        to={`/dashboard/raffles/${raffle.id}`}
+                        to={`/dashboard/admin/raffles/${raffle.id}/edit`}
                         className="px-4 py-2 text-purple-600 hover:bg-purple-50 rounded-lg font-medium transition-colors"
                       >
                         Gerenciar
@@ -243,7 +251,7 @@ export default function Dashboard() {
                 <Trophy className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                 <p className="text-gray-500 mb-4">Você ainda não criou nenhuma rifa</p>
                 <Link
-                  to="/dashboard/raffles/create"
+                  to="/dashboard/admin/raffles/create"
                   className="inline-flex items-center gap-2 bg-purple-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-purple-700 transition-colors"
                 >
                   <Plus className="w-5 h-5" />
@@ -255,7 +263,7 @@ export default function Dashboard() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <Link to="/dashboard/raffles/create" className="group">
+          <Link to="/dashboard/admin/raffles/create" className="group">
             <div className="bg-white rounded-xl p-6 shadow-sm border hover:shadow-md hover:border-purple-200 transition-all">
               <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4 group-hover:bg-purple-200 transition-colors">
                 <Plus className="w-6 h-6 text-purple-600" />

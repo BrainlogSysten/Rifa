@@ -11,10 +11,13 @@ import {
   Plus,
   X,
   Upload,
-  Ticket
+  Ticket,
+  Palette
 } from 'lucide-react'
 import { raffleService } from '../../services/api'
 import toast from 'react-hot-toast'
+import ImageUpload from '../../components/ImageUpload'
+import ThemeCustomizer from '../../components/ThemeCustomizer'
 
 interface RaffleFormData {
   title: string
@@ -28,49 +31,90 @@ interface RaffleFormData {
   maxTicketPerUser: number
   maxParticipants: number
   paymentMethod: string
+  numberOfTickets: number
+  theme: any
 }
 
 export default function CreateRaffle() {
   const navigate = useNavigate()
   const [isLoading, setIsLoading] = useState(false)
   const [activeTab, setActiveTab] = useState('basic')
+  // Função para obter data/hora formatada para input datetime-local
+  const getDefaultDateTime = (daysToAdd: number = 0): string => {
+    const date = new Date()
+    if (daysToAdd > 0) {
+      date.setDate(date.getDate() + daysToAdd)
+    }
+    
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    const hours = String(date.getHours()).padStart(2, '0')
+    const minutes = String(date.getMinutes()).padStart(2, '0')
+    
+    return `${year}-${month}-${day}T${hours}:${minutes}`
+  }
+
   const [formData, setFormData] = useState<RaffleFormData>({
     title: '',
     description: '',
     type: 'product',
     images: [],
-    startDate: '',
-    endDate: '',
+    startDate: getDefaultDateTime(), // Data/hora atual
+    endDate: getDefaultDateTime(7), // 7 dias a partir de agora
     terms: '',
     ticketPrice: 0,
     maxTicketPerUser: 0,
     maxParticipants: 0,
-    paymentMethod: 'pix'
+    paymentMethod: 'pix',
+    numberOfTickets: 100,
+    theme: {
+      primaryColor: '#DC2626',
+      secondaryColor: '#000000',
+      accentColor: '#F59E0B',
+      backgroundColor: '#FFFFFF',
+      textColor: '#1F2937',
+      gradientEnabled: true,
+      gradientType: 'linear',
+      gradientAngle: 45,
+      gradientColors: ['#DC2626', '#F59E0B'],
+      fontFamily: 'Inter',
+      headingFont: 'Poppins',
+      fontSize: 'medium',
+      buttonStyle: 'rounded',
+      buttonEffect: 'shadow',
+      animations: true,
+      animationSpeed: 'normal',
+      particleEffects: false,
+      borderRadius: 8,
+      spacing: 'normal',
+      pattern: 'none',
+      patternOpacity: 0.1,
+      specialIcon: 'star'
+    }
   })
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'ticketPrice' || name === 'maxTicketPerUser' || name === 'maxParticipants' 
+      [name]: name === 'ticketPrice' || name === 'maxTicketPerUser' || name === 'maxParticipants' || name === 'numberOfTickets'
         ? parseFloat(value) || 0 
         : value
     }))
   }
 
-  const handleImageAdd = (url: string) => {
-    if (url && !formData.images.includes(url)) {
-      setFormData(prev => ({
-        ...prev,
-        images: [...prev.images, url]
-      }))
-    }
-  }
-
-  const handleImageRemove = (index: number) => {
+  const handleImageChange = (images: string[]) => {
     setFormData(prev => ({
       ...prev,
-      images: prev.images.filter((_, i) => i !== index)
+      images: images
+    }))
+  }
+
+  const handleThemeChange = (theme: any) => {
+    setFormData(prev => ({
+      ...prev,
+      theme: theme
     }))
   }
 
@@ -99,8 +143,10 @@ export default function CreateRaffle() {
     try {
       const raffleData = {
         ...formData,
-        status: 'Draft'
+        status: 'Draft',
+        themeConfig: JSON.stringify(formData.theme) // Convert theme object to JSON string for backend
       }
+      delete raffleData.theme // Remove theme object as we're sending themeConfig instead
       await raffleService.create(raffleData)
       toast.success('Rifa criada com sucesso!')
       navigate('/dashboard/raffles')
@@ -121,8 +167,10 @@ export default function CreateRaffle() {
     try {
       const raffleData = {
         ...formData,
-        status: 'Active'
+        status: 'Active',
+        themeConfig: JSON.stringify(formData.theme) // Convert theme object to JSON string for backend
       }
+      delete raffleData.theme // Remove theme object as we're sending themeConfig instead
       await raffleService.create(raffleData)
       toast.success('Rifa criada e publicada com sucesso!')
       navigate('/dashboard/raffles')
@@ -176,7 +224,8 @@ export default function CreateRaffle() {
               { id: 'images', label: 'Imagens', icon: Image },
               { id: 'dates', label: 'Datas', icon: Calendar },
               { id: 'pricing', label: 'Preços e Limites', icon: DollarSign },
-              { id: 'rules', label: 'Regras e Termos', icon: Users }
+              { id: 'rules', label: 'Regras e Termos', icon: Users },
+              { id: 'theme', label: 'Tema e Cores', icon: Palette }
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -258,67 +307,16 @@ export default function CreateRaffle() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Imagens da Rifa
                 </label>
-                <div className="space-y-4">
-                  <div className="flex gap-2">
-                    <input
-                      type="url"
-                      placeholder="Cole a URL da imagem aqui"
-                      className="input flex-1"
-                      onKeyPress={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault()
-                          const input = e.target as HTMLInputElement
-                          handleImageAdd(input.value)
-                          input.value = ''
-                        }
-                      }}
-                    />
-                    <button
-                      type="button"
-                      className="btn btn-secondary btn-md"
-                      onClick={() => {
-                        const input = document.querySelector('input[type="url"]') as HTMLInputElement
-                        if (input) {
-                          handleImageAdd(input.value)
-                          input.value = ''
-                        }
-                      }}
-                    >
-                      <Plus className="w-4 h-4" />
-                    </button>
-                  </div>
-
-                  {formData.images.length === 0 ? (
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-                      <Upload className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                      <p className="text-gray-600">Adicione URLs de imagens para sua rifa</p>
-                      <p className="text-sm text-gray-500 mt-1">Recomendamos pelo menos 3 imagens</p>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                      {formData.images.map((image, index) => (
-                        <div key={index} className="relative group">
-                          <img
-                            src={image}
-                            alt={`Imagem ${index + 1}`}
-                            className="w-full h-32 object-cover rounded-lg"
-                            onError={(e) => {
-                              const target = e.target as HTMLImageElement
-                              target.src = 'https://via.placeholder.com/300x200?text=Erro+ao+carregar'
-                            }}
-                          />
-                          <button
-                            type="button"
-                            onClick={() => handleImageRemove(index)}
-                            className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                <p className="text-sm text-gray-500 mb-4">
+                  Faça upload de até 5 imagens para sua rifa. A primeira imagem será usada como principal.
+                </p>
+                <ImageUpload
+                  images={formData.images}
+                  onChange={handleImageChange}
+                  maxImages={5}
+                  maxFileSize={5 * 1024 * 1024}
+                  showPreview={true}
+                />
               </div>
             </div>
           )}
@@ -437,6 +435,25 @@ export default function CreateRaffle() {
                   />
                   <p className="text-xs text-gray-500 mt-1">Deixe 0 para sem limite</p>
                 </div>
+
+                <div>
+                  <label htmlFor="numberOfTickets" className="block text-sm font-medium text-gray-700 mb-2">
+                    Total de Números da Rifa *
+                  </label>
+                  <input
+                    type="number"
+                    id="numberOfTickets"
+                    name="numberOfTickets"
+                    value={formData.numberOfTickets}
+                    onChange={handleInputChange}
+                    className="input"
+                    placeholder="100"
+                    min="10"
+                    max="10000"
+                    required
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Quantos números estarão disponíveis (ex: 001 a 100)</p>
+                </div>
               </div>
             </div>
           )}
@@ -468,6 +485,23 @@ export default function CreateRaffle() {
                   <li>Documentos necessários</li>
                   <li>Restrições de participação</li>
                 </ul>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'theme' && (
+            <div className="space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-4">
+                  Personalização do Tema da Rifa
+                </label>
+                <p className="text-sm text-gray-500 mb-6">
+                  Configure cores, tipografia, efeitos e layout para criar uma experiência única para os participantes.
+                </p>
+                <ThemeCustomizer
+                  theme={formData.theme}
+                  onChange={handleThemeChange}
+                />
               </div>
             </div>
           )}
